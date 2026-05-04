@@ -6,10 +6,11 @@ message: >-
   If you use this code, please cite the corresponding manuscript.
 type: software
 authors:
-  - family-names: ""
-    given-names: ""
+  - family-names: "Jiang"
+    given-names: "Yiquan"
     affiliation: "Sun Yat-sen University Cancer Center"
-repository-code: ""
+repository-code: "https://github.com/Yiquan-Jiang/HAIC-Immunotherapy-Strategy"
+url: "https://github.com/Yiquan-Jiang/HAIC-Immunotherapy-Strategy"
 license: MIT
 keywords:
   - hepatocellular carcinoma
@@ -28,7 +29,8 @@ preferred-citation:
     Immunotherapy Following Induction Arterial Chemotherapy for Unresectable
     Hepatocellular Carcinoma: A Biomarker-Guided On-Demand Decision Framework
   authors:
-    - family-names: ""
-      given-names: ""
+    - family-names: "Jiang"
+      given-names: "Yiquan"
+      affiliation: "Sun Yat-sen University Cancer Center"
   journal: "Journal of Clinical Oncology"
   year: 2026
