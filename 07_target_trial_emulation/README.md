@@ -1,93 +1,91 @@
 # 07 — Stage 3: Target Trial Emulation (TTE)
 
 Two parallel target-trial emulations testing whether **biomarker-guided
-deferral of immune-based therapy** yields non-inferior OS compared with
-**early combination**.
+deferral of immune-based therapy** ("Adaptive On Demand") yields non-inferior
+OS compared with **early combination**.
 
 > **Paper output:** Fig 7 (two-panel KM + ΔRMST forest + IPCW diagnostics).
 
-## Two parallel cohorts
+## The single canonical TTE driver
 
-| Cohort | Question | Biomarker rule |
+`tte_IT_R_two_cohorts.R` — **IT_RULES_v2** applied to two cohorts in one run.
+Trigger logic (per cohort):
+
+| | **Cohort A**: `cohort_3matched` | **Cohort B**: `cohort_7group_psm02` |
 |---|---|---|
-| **Cohort A — ICI-only emulation** | HAIC → ICI vs HAIC + ICI early concurrent | **NLR-based** triggers (Rule 1-5 + ExRule 2-3) |
-| **Cohort B — ICI + Anti-angio emulation** | HAIC → ICI + Anti-angio vs HAIC + ICI + Anti-angio early concurrent | **PIV-based** triggers |
+| Source                 | matched_06 ∪ all HAIC + I + T concurrent | matched_02 ∪ all HAIC + I concurrent |
+| Add-on                 | ICI + antiangiogenic                     | ICI only                             |
+| AFP drop trigger       | < −32.5 %                                | < −40 %                              |
+| PLR trigger            | > 102.4                                  | > 98.7                               |
+| SII trigger            | > 390.9                                  | (NA)                                 |
+| NLR trigger            | (NA)                                     | > 2.68                               |
+| PIVKA Δ trigger        | < −45.6 %                                | < −51.2 %                            |
+| Lymph-node metastasis  | active                                   | active                               |
 
 ## Strategy specifications
 
 ```
-Strategy A (Dynamic / on-demand)
-  Add ICI/Anti-angio only if biomarker rule fires:
-    Rule 1: Vp3/4 PVTT, distant metastasis, HVTT, IVC-RA thrombus, lymph-node mets
-    Rule 2: baseline or pre-HAIC-3 NLR ≥ 2.5
-    Rule 3: baseline largest tumor diameter > 13 cm
-    Rule 4: baseline PIVKA-II > 12,000 mAU/mL
-    Rule 5: baseline AFP < 20 ng/mL
-  Exemptions (cycle ≥ 4):
-    ExRule 2: NLR persistently < 2.5 → continue observation
-    ExRule 3: AFP decline > 50% from baseline → continue observation
+Strategy A (Adaptive On Demand)
+  Cycle ≥ 3: trigger on any of: AFP/PIVKA insufficient response, PLR/SII/NLR
+             elevation, baseline distant metastasis, baseline lymph-node mets
+  Untriggered post-HAIC: trigger on AFP > 20 ng/mL OR PIVKA > 40 mAU/mL
 
-Strategy B (Early combination)
-  Initiate systemic therapy within 14 days of HAIC initiation, regardless of biomarkers.
+Strategy B (Early Combination)
+  Initiate systemic therapy within EARLY_GRACE_DAYS = 14 days of HAIC start,
+  regardless of biomarkers.
+
+Dynamic grace: 90 days; IPCW truncation: 99th percentile.
 ```
 
 ## Methodology
 
-**Clone-Censor-Weight (CCW)** framework (Hernán & Robins; Cain et al.):
+**Clone-Censor-Weight (CCW)** framework with **stabilized IPCW**:
 
 ```
 For each patient:
   Clone into both arms (Strategy A and Strategy B).
-  Apply artificial censoring whenever observed treatment violates the assigned strategy.
+  Apply artificial censoring whenever observed treatment violates the
+    assigned strategy.
   Re-weight by stabilized inverse-probability-of-censoring weights (IPCW)
     estimated from a pooled person-period logistic regression.
   Fit weighted Cox with robust sandwich SE for HR.
-  Compute weighted KM and integrate for RMST; bootstrap 500× re-estimating IPCW.
+  Compute weighted KM and integrate for RMST at τ ∈ {12, 18, 24, 36} months;
+    bootstrap 500× re-estimating IPCW each iteration.
 ```
 
 **Sensitivity analyses included:**
-- IPTW × IPCW double weighting
-- Weight truncation at 1st/99th percentiles
-- Different grace periods (7d / 14d / 21d / 28d)
+- Different RMST τ (12, 18, 24, 36 months)
+- IPCW truncation at 99th percentile
 - E-value for unmeasured confounding
 
-## Pipeline
+## Layout
 
 ```
-analysis_ready.csv  +  matched_ids_*.csv
-       │
-       ▼
-tte_piv_R_core_cohort_7group_psm02.R   ── Core CCW + IPCW + weighted Cox + RMST
-                                          (Version: PIV_BASED_RULES_v3,
-                                           drives both NLR and PIV cohorts
-                                           via the second CLI argument)
-       │  (writes CSVs: HR, RMST, sensitivity, KM, risk-table)
-       ▼
-tte_nlr_R_figures.py                   ── Publication figures (works for both rules)
-       │
-       ▼
-tte_pathway_visualization.R            ── Strategy pathway diagram
-tte_pathway_visualization_alt_samples.R── Alternate-sample variant
-generate_tte_flow_drawio_two_cohorts.R ── CONSORT-style flow (drawio XML)
+07_target_trial_emulation/
+├── tte_IT_R_two_cohorts.R              ── R core: CCW + IPCW + weighted Cox + RMST
+│                                          (writes CSVs to output/step3_tte/IT_RULES_R_two_cohorts/)
+├── tte_IT_R_figures_two_cohorts.py     ── Python figures from those CSVs
+├── tte_pathway_visualization.R         ── Strategy pathway diagram
+├── tte_pathway_visualization_alt_samples.R  Alternate-sample variant
+└── generate_tte_flow_drawio_two_cohorts.R   CONSORT-style flow (drawio XML)
 ```
 
 ## Run
 
 ```bash
-# Cohort B (PIV-based, ICI + Anti-angio) — convenience runner
-bash utils_runners/run_tte_cohort_7group_psm02_piv.sh
+# Convenience runner (recommended)
+bash utils_runners/run_tte_two_cohorts.sh
 
-# Cohort A (NLR-based, ICI-only) — manual (pass NLR cohort IDs as 2nd arg)
-Rscript 07_target_trial_emulation/tte_piv_R_core_cohort_7group_psm02.R \
-        data/  data/cohort_ids_nlr.csv
-python 07_target_trial_emulation/tte_nlr_R_figures.py output/step3_tte/.../
+# Manual two-step
+Rscript 07_target_trial_emulation/tte_IT_R_two_cohorts.R  data/
+python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 ```
 
 ## Outputs
 
 | Output | Paper element |
 |---|---|
-| KM curves of Strategy A vs B (Cohort A + Cohort B) | **Fig 7A, B** |
+| KM curves of Strategy A vs B (Cohort A + B)        | **Fig 7A, B** |
 | ΔRMST forest (sensitivity panel)                   | **Fig 7C** |
 | IPCW diagnostics (weight distribution, ESS)        | Supplementary |
 | TTE flow diagram (clones, censoring)               | **Fig 7** + Supplements |
