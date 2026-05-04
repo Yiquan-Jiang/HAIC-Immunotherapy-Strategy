@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+title: >-
+  HAIC-Immunotherapy-Strategy-JCO: Code repository for biomarker-guided
+  on-demand immunotherapy after induction HAIC in unresectable HCC
+message: >-
+  If you use this code, please cite the corresponding manuscript.
+type: software
+authors:
+  - family-names: ""
+    given-names: ""
+    affiliation: "Sun Yat-sen University Cancer Center"
+repository-code: ""
+license: MIT
+keywords:
+  - hepatocellular carcinoma
+  - hepatic arterial infusion chemotherapy
+  - HAIC
+  - immune checkpoint inhibitors
+  - target trial emulation
+  - causal inference
+  - clone-censor-weight
+  - propensity score matching
+  - overlap weighting
+  - restricted cubic spline
+preferred-citation:
+  type: article
+  title: >-
+    Immunotherapy Following Induction Arterial Chemotherapy for Unresectable
+    Hepatocellular Carcinoma: A Biomarker-Guided On-Demand Decision Framework
+  authors:
+    - family-names: ""
+      given-names: ""
+  journal: "Journal of Clinical Oncology"
+  year: 2026

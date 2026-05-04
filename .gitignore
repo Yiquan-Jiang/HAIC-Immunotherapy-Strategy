@@ -1,0 +1,106 @@
+# ============================================================
+# Patient-level data — NEVER commit
+# ============================================================
+*.csv
+*.xlsx
+*.xls
+*.tsv
+*.parquet
+*.feather
+*.dta
+*.sav
+*.rds
+*.RData
+*.rda
+
+# Allow CITATION / metadata CSVs explicitly (none yet, but reserved)
+!docs/citation_*.csv
+
+# ============================================================
+# Generated outputs
+# ============================================================
+output/
+outputs/
+results/
+results_*/
+figures/
+Figures/
+Figures_publication/
+Tables_publication/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.eps
+*.tiff
+Rplots.pdf
+
+# ============================================================
+# Logs / intermediates
+# ============================================================
+logs/
+log/
+*.log
+*.out
+*.err
+*.tmp
+*.cache
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# ============================================================
+# R working files
+# ============================================================
+.Rproj.user/
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+
+# ============================================================
+# Python venvs / build artifacts
+# ============================================================
+.venv/
+venv/
+env/
+.env
+build/
+dist/
+*.egg-info/
+
+# ============================================================
+# Editor / OS files
+# ============================================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ============================================================
+# Project-specific exclusions
+# ============================================================
+data/
+Deep_research/
+node_modules/
+.cursor/
+.claude/
+.workbuddy/
+.minimax/
+_backup_before_lm_align/
+archieve/
+archive/
+*backup*
+
+# ============================================================
+# Manuscript / writing
+# ============================================================
+*.docx
+*.doc
+~$*
+manuscript_writing/
