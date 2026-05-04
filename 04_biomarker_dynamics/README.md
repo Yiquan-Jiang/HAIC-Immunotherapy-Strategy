@@ -11,10 +11,9 @@ HAIC + systemic-therapy strategies.
 
 | Script | Description |
 |---|---|
-| `psm_afp_pivka_dynamics.py`            | AFP / PIVKA-II / inflammatory-index trajectories within the 21 PSM pairs |
-| `plot_haic_then_i_to_target_interval.R`| Distribution of HAIC → ICI initiation interval, target-window adherence |
+| `psm_afp_pivka_dynamics.py` | AFP / PIVKA-II / inflammatory-index trajectories within the 21 PSM pairs |
 
 ## Outputs
 
 - Median trajectory plots (AFP, PIVKA-II, ALBI, NLR, SII, PIV) per PSM pair
-- "Time to systemic-therapy add-on" histograms used to motivate the dynamic-decision triggers in Stage 3
+- Tabulated landmark biomarker statistics used in the Results section

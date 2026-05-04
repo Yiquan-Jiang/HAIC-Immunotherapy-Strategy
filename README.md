@@ -76,12 +76,12 @@ HAIC-Immunotherapy-Strategy-JCO/
 │   ├── step7_subgroup_analysis.py            ΔRMST + interaction tests
 │   └── step7_subgroup_plots.py               Forest panels for Fig 4
 │
-├── 03_swimmer_plot/                       ← Fig 5
-│   └── swimmer_plot_7groups.R                Per-patient timelines for 7 groups
+├── 03_swimmer_plot/                       ← Fig 5 + companion timing visualization
+│   ├── swimmer_plot_7groups.R                Per-patient timelines for 7 groups
+│   └── plot_haic_then_i_to_target_interval.R HAIC → ICI interval / target-window adherence
 │
 ├── 04_biomarker_dynamics/                 ← Longitudinal AFP/PIVKA-II/inflammatory indices
-│   ├── psm_afp_pivka_dynamics.py             Trajectories within PSM-matched pairs
-│   └── plot_haic_then_i_to_target_interval.R Time-to-trigger interval visualization
+│   └── psm_afp_pivka_dynamics.py             Trajectories within PSM-matched pairs
 │
 ├── 05_rcs_interaction/                    ← Stage 2 (continuous) — Fig 6
 │   │   See FINAL_SCRIPTS.md for the authoritative 4-script index
@@ -122,40 +122,11 @@ HAIC-Immunotherapy-Strategy-JCO/
 │   ├── tte_pathway_visualization_alt_samples.R
 │   └── generate_tte_flow_drawio_two_cohorts.R   CONSORT-style flow (drawio XML)
 │
-├── 08_schematic_figures/                  ← Conceptual figures
-│   ├── plot_tte_schematic_v3.py              TTE conceptual schematic (Nature-style)
-│   ├── plot_tte_nlr_strategy_flowchart.py    Decision-rule flowchart (NLR-based variant)
-│   └── plot_tte_IT_rules_v2_schematic.py     IT_RULES_v2 schematic
-│
-├── utils_runners/                         ← One-shot runners (.sh)
-│   ├── run_tte_two_cohorts.sh                Stage 3 — IT_RULES_v2 two-cohort pipeline
-│   ├── run_all_group7.sh                     Stage 0 → 1 → 2 end-to-end
-│   └── run_rcs_interaction_group7.sh         RCS interaction (per-pair driver)
-│
 └── docs/                                  ← Original project READMEs (preserved)
     ├── README_TTE_project_original.md
     ├── README_group7_project_original.md
     └── ORGANIZATION_REPORT_original.md
 ```
-
----
-
-## Script ↔ Figure / Table mapping
-
-| Paper element | Folder | Primary scripts |
-|---|---|---|
-| **Table 1** Baseline characteristics — overall cohort | `01_psm_iptw_overall_survival/` | `step6_tables_and_loveplots.R` |
-| **Table 2** Baseline before PSM (7 groups)            | `01_psm_iptw_overall_survival/` | `step6_tables_and_loveplots.R` |
-| **Tables 3-5** PSM balance for selected pairs         | `01_psm_iptw_overall_survival/` | `step3_psm_analysis.R` + `step6_tables_and_loveplots.R` |
-| **Fig 1** Study flow                                  | `08_schematic_figures/` | (consort-style schematic) |
-| **Fig 2** OS across 7 strategies (KM + IPTW)          | `01_psm_iptw_overall_survival/` | `step4_km_curves.py`, `step5_forest_plot.py` |
-| **Fig 3** PSM head-to-head OS                          | `01_psm_iptw_overall_survival/` | `step4b_km_template_matched.py`, `step5b_forest_vs_IT_concurrent.py`, `step5c_forest_vs_HAIC_alone.py` |
-| **Fig 4** Concurrent vs delayed-sequential (subgroups, OW) | `02_subgroup_overlap_weighting/` | `step7_subgroup_*` + `step7_ow_balance_*` |
-| **Fig 5** Swimmer plots (7 groups)                    | `03_swimmer_plot/` | `swimmer_plot_7groups.R` |
-| **Fig 6** RCS interaction matrix                      | `05_rcs_interaction/` | `RCS_PSM_dual_timescale.R` + `RCS_PSM_matrix_panel.R` (Route A); `afp_pivka_composite/01_rcs_afp_pivka_composite.R` + `02_rcs_matrix_panel.R` (Route B); `publication_figures/make_publication_figures_iptw.R` (final 5×6 panel). See `05_rcs_interaction/FINAL_SCRIPTS.md`. |
-| **Fig 6 (forest panels)** Categorical interaction     | `06_categorical_forest_interaction/` | `01_publication_figures.py` (PSM02), `02_publication_figures_ids06_IplusT.py` (PSM06) |
-| **Fig 7** Target Trial Emulation — two cohorts        | `07_target_trial_emulation/` | `tte_IT_R_two_cohorts.R` (R core, IT_RULES_v2) + `tte_IT_R_figures_two_cohorts.py` (figures) |
-| Longitudinal biomarker dynamics (Results §Longitudinal tumor biomarker dynamics) | `04_biomarker_dynamics/` | `psm_afp_pivka_dynamics.py` |
 
 ---
 
@@ -194,8 +165,12 @@ Rscript 02_subgroup_overlap_weighting/step7_subgroup_ow.R
 python  02_subgroup_overlap_weighting/step7_subgroup_analysis.py
 python  02_subgroup_overlap_weighting/step7_subgroup_plots.py
 
-# Fig 5: swimmer
+# Fig 5: swimmer + HAIC → ICI interval visualization
 Rscript 03_swimmer_plot/swimmer_plot_7groups.R
+Rscript 03_swimmer_plot/plot_haic_then_i_to_target_interval.R
+
+# Longitudinal biomarker dynamics
+python  04_biomarker_dynamics/psm_afp_pivka_dynamics.py
 
 # Stage 2a: RCS interaction — see 05_rcs_interaction/FINAL_SCRIPTS.md
 python  05_rcs_interaction/build_cohort_psm.py                                 # Route A
@@ -211,11 +186,9 @@ RMS_RCS_N_BOOT=300 Rscript 05_rcs_interaction/publication_figures/make_publicati
 python  06_categorical_forest_interaction/01_publication_figures.py
 python  06_categorical_forest_interaction/02_publication_figures_ids06_IplusT.py
 
-# Stage 3: Target Trial Emulation (Fig 7) — both cohorts in one invocation
-bash    utils_runners/run_tte_two_cohorts.sh
-# Or manually:
-#   Rscript 07_target_trial_emulation/tte_IT_R_two_cohorts.R  data/
-#   python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
+# Stage 3: Target Trial Emulation (Fig 7) — IT_RULES_v2 drives both cohorts
+Rscript 07_target_trial_emulation/tte_IT_R_two_cohorts.R  data/
+python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 ```
 
 ---

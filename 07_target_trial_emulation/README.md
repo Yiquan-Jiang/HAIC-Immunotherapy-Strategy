@@ -73,10 +73,7 @@ For each patient:
 ## Run
 
 ```bash
-# Convenience runner (recommended)
-bash utils_runners/run_tte_two_cohorts.sh
-
-# Manual two-step
+# Two-step pipeline
 Rscript 07_target_trial_emulation/tte_IT_R_two_cohorts.R  data/
 python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 ```
