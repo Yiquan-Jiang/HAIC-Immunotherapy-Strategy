@@ -58,17 +58,29 @@ analysis_ready.csv  +  matched_ids_*.csv
        │
        ▼
 tte_piv_R_core_cohort_7group_psm02.R   ── Core CCW + IPCW + weighted Cox + RMST
-tte_IT_R_core_cohort_3matched.R        ── 3-cohort matched variant
-tte_IT_R_two_cohorts.R                 ── Two-cohort version (ICI / ICI+T)
+                                          (Version: PIV_BASED_RULES_v3,
+                                           drives both NLR and PIV cohorts
+                                           via the second CLI argument)
        │  (writes CSVs: HR, RMST, sensitivity, KM, risk-table)
        ▼
-tte_nlr_R_figures.py                   ── Publication figures (NLR rule)
-tte_IT_R_figures.py                    ── Single-cohort figures
-tte_IT_R_figures_two_cohorts.py        ── Two-cohort figures (ICI vs ICI+T)
+tte_nlr_R_figures.py                   ── Publication figures (works for both rules)
        │
        ▼
 tte_pathway_visualization.R            ── Strategy pathway diagram
-generate_tte_flow_drawio*.R            ── CONSORT-style flow diagrams (drawio XML)
+tte_pathway_visualization_alt_samples.R── Alternate-sample variant
+generate_tte_flow_drawio_two_cohorts.R ── CONSORT-style flow (drawio XML)
+```
+
+## Run
+
+```bash
+# Cohort B (PIV-based, ICI + Anti-angio) — convenience runner
+bash utils_runners/run_tte_cohort_7group_psm02_piv.sh
+
+# Cohort A (NLR-based, ICI-only) — manual (pass NLR cohort IDs as 2nd arg)
+Rscript 07_target_trial_emulation/tte_piv_R_core_cohort_7group_psm02.R \
+        data/  data/cohort_ids_nlr.csv
+python 07_target_trial_emulation/tte_nlr_R_figures.py output/step3_tte/.../
 ```
 
 ## Outputs

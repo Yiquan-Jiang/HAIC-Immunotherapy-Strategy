@@ -14,14 +14,13 @@ heterogeneity of treatment effect, focusing on:
 
 ```
 06_categorical_forest_interaction/
-├── final_publication/        ← Publication-ready, IPTW + PSM versions
-│   ├── 01_publication_figures.py                         PSM02
-│   ├── 02_publication_figures_ids06_IplusT.py            PSM06
-│   ├── 03_publication_figures_iptw_psm02.py              IPTW+PSM02 combined panel
-│   ├── 03_publication_figures_ids05_IplusT_concurrent.py PSM05
-│   ├── 04_publication_figures_iptw_psm06_IplusT.py       IPTW+PSM06
-│   └── 05_publication_figures_iptw_psm05_IplusT_concurrent.py IPTW+PSM05
-└── group7_version/           ← Earlier development version + driver script
+└── final_publication/        ← Publication-ready, IPTW + PSM versions
+    ├── 01_publication_figures.py                         PSM02
+    ├── 02_publication_figures_ids06_IplusT.py            PSM06
+    ├── 03_publication_figures_iptw_psm02.py              IPTW+PSM02 combined panel
+    ├── 03_publication_figures_ids05_IplusT_concurrent.py PSM05
+    ├── 04_publication_figures_iptw_psm06_IplusT.py       IPTW+PSM06
+    └── 05_publication_figures_iptw_psm05_IplusT_concurrent.py IPTW+PSM05
 ```
 
 ## Statistical specifications

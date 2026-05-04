@@ -91,45 +91,33 @@ HAIC-Immunotherapy-Strategy-JCO/
 │   │   ├── RCS_PSM_dual_timescale.R          Sensitivity analysis (PSM)
 │   │   ├── RCS_PSM_matrix_panel.R            Assemble Fig 6 matrix panel
 │   │   └── extract_pre_it_for_psm.py         Extract pre-IT lab values
-│   ├── group7_project_version/               Per-pair scripts (one R/PY per cohort)
-│   │   ├── RCS_INT_HAIC_ALONE_AND_THEN_I_*.{R,py}
-│   │   ├── RCS_INT_HAIC_ALONE_AND_THEN_T_*.{R,py}
-│   │   ├── RCS_INT_HAIC_ALONE_AND_THEN_IT_*.{R,py}
-│   │   ├── RCS_INT_HAIC_ALONE_AND_I_CONC_*.{R,py}
-│   │   ├── RCS_INT_HAIC_ALONE_AND_T_CONC_*.{R,py}
-│   │   ├── RCS_INT_HAIC_ALONE_AND_I_T_CONC_*.{R,py}
-│   │   ├── RCS_INT_ALL_GROUPS_unified.R      Unified driver for all pairs
-│   │   ├── rcs_psm_matched/                  PSM-matched RCS
-│   │   └── afp_pivka_composite/              AFP-PIVKA composite biomarker
-│   ├── afp_pivka_composite/                  TTE project version of composite analysis
+│   ├── afp_pivka_composite/                  AFP-PIVKA composite biomarker analysis
+│   │   ├── 00a_extract_pre_it_labs.py
+│   │   ├── 01_rcs_afp_pivka_composite.R
+│   │   └── 02_rcs_matrix_panel.R
 │   └── publication_figures/                  Final figure assembly (PSM + IPTW)
+│       ├── make_publication_figures_iptw.R
+│       └── make_publication_figures_psm.R
 │
 ├── 06_categorical_forest_interaction/     ← Stage 2 (categorical) — Fig 5 forest
-│   ├── final_publication/                    Publication-ready interaction forest plots
-│   │   ├── 01_publication_figures.py         PSM02: HAIC alone vs HAIC → ICI
-│   │   ├── 02_publication_figures_ids06_IplusT.py  PSM06: vs HAIC → ICI + Anti-angio
-│   │   ├── 03_publication_figures_iptw_psm02.py    IPTW + PSM02 combined panel
-│   │   ├── 03_publication_figures_ids05_IplusT_concurrent.py
-│   │   ├── 04_publication_figures_iptw_psm06_IplusT.py
-│   │   └── 05_publication_figures_iptw_psm05_IplusT_concurrent.py
-│   └── group7_version/                       Earlier development version + driver
+│   └── final_publication/                    Publication-ready interaction forest plots
+│       ├── 01_publication_figures.py             PSM02: HAIC alone vs HAIC → ICI
+│       ├── 02_publication_figures_ids06_IplusT.py PSM06: vs HAIC → ICI + Anti-angio
+│       ├── 03_publication_figures_iptw_psm02.py   IPTW + PSM02 combined panel
+│       ├── 03_publication_figures_ids05_IplusT_concurrent.py
+│       ├── 04_publication_figures_iptw_psm06_IplusT.py
+│       └── 05_publication_figures_iptw_psm05_IplusT_concurrent.py
 │
 ├── 07_target_trial_emulation/             ← Stage 3 — Fig 7
 │   │   Clone-Censor-Weight (CCW) + stabilized IPCW + weighted Cox
 │   │   Two parallel cohorts:
 │   │     - Cohort A (NLR-based): ICI-only emulation
 │   │     - Cohort B (PIV-based): ICI + Anti-angio emulation
-│   ├── tte_piv_R_core_cohort_7group_psm02.R  TTE core (PIV rule, 7-group PSM02)
-│   ├── tte_IT_R_core_cohort_3matched.R       TTE core (3-cohort matched)
-│   ├── tte_IT_R_two_cohorts.R                Two-cohort version (ICI / ICI+T)
-│   ├── tte_nlr_R_figures.py                  Publication figures for NLR rule
-│   ├── tte_IT_R_figures.py                   Publication figures (single-cohort)
-│   ├── tte_IT_R_figures_two_cohorts.py       Publication figures (two cohorts)
-│   ├── tte_pathway_visualization.R           Strategy pathway diagram
+│   ├── tte_piv_R_core_cohort_7group_psm02.R   TTE core (PIV rule, v3, 7-group PSM02)
+│   ├── tte_nlr_R_figures.py                   Publication figures (works for NLR & PIV)
+│   ├── tte_pathway_visualization.R            Strategy pathway diagram
 │   ├── tte_pathway_visualization_alt_samples.R
-│   ├── generate_tte_flow_drawio.R            CONSORT-style flow (drawio XML)
-│   ├── generate_tte_flow_drawio_two_cohorts.R
-│   └── generate_tte_flow_drawio_IT_cohort3matched.R
+│   └── generate_tte_flow_drawio_two_cohorts.R CONSORT-style flow (drawio XML)
 │
 ├── 08_schematic_figures/                  ← Conceptual figures
 │   ├── plot_tte_schematic_v3.py              TTE conceptual schematic (Nature-style)
@@ -137,7 +125,6 @@ HAIC-Immunotherapy-Strategy-JCO/
 │   └── plot_tte_IT_rules_v2_schematic.py     ICI-rule schematic (v2)
 │
 ├── utils_runners/                         ← One-shot runners (.sh)
-│   ├── run_tte_cohort_7group_psm02.sh        NLR-rule TTE pipeline
 │   ├── run_tte_cohort_7group_psm02_piv.sh    PIV-rule TTE pipeline
 │   ├── run_all_group7.sh                     Group-7 project end-to-end
 │   └── run_rcs_interaction_group7.sh         RCS interaction (per-pair) driver
@@ -164,7 +151,7 @@ HAIC-Immunotherapy-Strategy-JCO/
 | **Fig 5** Swimmer plots (7 groups)                    | `03_swimmer_plot/` | `swimmer_plot_7groups.R` |
 | **Fig 6** RCS interaction matrix                      | `05_rcs_interaction/` | `rcs_all_pairs_dual_timescale.R`, `RCS_PSM_matrix_panel.R`, `make_publication_figures_*.R` |
 | **Fig 6 (forest panels)** Categorical interaction     | `06_categorical_forest_interaction/` | `01_publication_figures.py` (PSM02), `02_publication_figures_ids06_IplusT.py` (PSM06) |
-| **Fig 7** Target Trial Emulation — two cohorts        | `07_target_trial_emulation/` | `tte_piv_R_core_cohort_7group_psm02.R` (Cohort A/B core), `tte_IT_R_two_cohorts.R`, `tte_*_R_figures*.py` |
+| **Fig 7** Target Trial Emulation — two cohorts        | `07_target_trial_emulation/` | `tte_piv_R_core_cohort_7group_psm02.R` (TTE core, v3), `tte_nlr_R_figures.py` (publication figures) |
 | Longitudinal biomarker dynamics (Results §Longitudinal tumor biomarker dynamics) | `04_biomarker_dynamics/` | `psm_afp_pivka_dynamics.py` |
 
 ---
@@ -219,8 +206,11 @@ python  06_categorical_forest_interaction/final_publication/01_publication_figur
 python  06_categorical_forest_interaction/final_publication/02_publication_figures_ids06_IplusT.py
 
 # Stage 3: Target Trial Emulation (Fig 7)
-bash    utils_runners/run_tte_cohort_7group_psm02.sh        # NLR rule
-bash    utils_runners/run_tte_cohort_7group_psm02_piv.sh    # PIV rule
+bash    utils_runners/run_tte_cohort_7group_psm02_piv.sh    # PIV rule (Cohort B: ICI + Anti-angio)
+# Manual: TTE core also drives the NLR-rule analysis (Cohort A) when invoked
+#        with the NLR cohort IDs as the second argument:
+#   Rscript 07_target_trial_emulation/tte_piv_R_core_cohort_7group_psm02.R \
+#           data/  data/cohort_ids_nlr.csv
 ```
 
 ---

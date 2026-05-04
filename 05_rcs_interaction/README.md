@@ -7,14 +7,12 @@ systemic therapy to HAIC.
 
 > **Paper output:** Fig 6 (RCS interaction matrix) + supplementary panels.
 
-## Two complementary versions
+## Layout
 
 ```
 05_rcs_interaction/
 ├── tte_project_version/      ← Comprehensive: builds all 6 pairs at once,
 │                                runs unified analysis, produces matrix panel
-├── group7_project_version/   ← Per-pair: one R + one Python per cohort,
-│                                useful for debugging individual pairs
 ├── afp_pivka_composite/      ← Composite biomarker analysis
 │                                (AFP, PIVKA-II combined)
 └── publication_figures/      ← Final figure assembly (PSM + IPTW)
@@ -37,6 +35,15 @@ RCS_PSM_matrix_panel.R        ── Assemble Fig 6 matrix panel
 publication_figures/
     make_publication_figures_iptw.R   ── Final IPTW panels
     make_publication_figures_psm.R    ── Final PSM panels
+```
+
+For the **composite AFP × PIVKA-II biomarker** track:
+
+```
+afp_pivka_composite/
+    00a_extract_pre_it_labs.py    ── Extract pre-IT lab values
+    01_rcs_afp_pivka_composite.R  ── RCS × treatment for composite biomarker
+    02_rcs_matrix_panel.R         ── Composite-biomarker matrix panel
 ```
 
 ## Statistical specifications
