@@ -1,8 +1,8 @@
-# HAIC-Immunotherapy-Strategy-JCO
+# HAIC-Immunotherapy-Strategy
 
 **Code repository for the manuscript:**
 
-> *Immunotherapy Following Induction Arterial Chemotherapy for Unresectable Hepatocellular Carcinoma: A Biomarker-Guided On-Demand Decision Framework*
+> *Immunotherapy Following Induction Arterial Chemotherapy for Unresectable Hepatocellular Carcinoma: A Biomarker-Guided Strategy*
 
 A causal-inference framework that compares **seven first-line treatment strategies** in 3,885 patients with unresectable HCC treated with induction FOLFOX-HAIC, and develops a **biomarker-guided on-demand decision rule** for adding immunotherapy / antiangiogenic therapy (validated in two parallel **target-trial emulations**).
 
