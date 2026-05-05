@@ -4,8 +4,6 @@ Two parallel target-trial emulations testing whether **biomarker-guided
 deferral of immune-based therapy** ("Adaptive On Demand") yields non-inferior
 OS compared with **early combination**.
 
-> **Paper output:** Fig 7 (two-panel KM + ΔRMST forest + IPCW diagnostics).
-
 ## The single canonical TTE driver
 
 `tte_IT_R_two_cohorts.R` — **IT_RULES_v2** applied to two cohorts in one run.
@@ -80,10 +78,8 @@ python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 
 ## Outputs
 
-| Output | Paper element |
-|---|---|
-| KM curves of Strategy A vs B (Cohort A + B)        | **Fig 7A, B** |
-| ΔRMST forest (sensitivity panel)                   | **Fig 7C** |
-| IPCW diagnostics (weight distribution, ESS)        | Supplementary |
-| TTE flow diagram (clones, censoring)               | **Fig 7** + Supplements |
-| HR / RMST / E-value / sensitivity CSVs             | Supplementary tables |
+- KM curves of Strategy A (Adaptive On Demand) vs B (Early Combination), per cohort
+- ΔRMST forest across multiple horizons (sensitivity)
+- IPCW diagnostics (weight distribution, ESS)
+- TTE flow diagram (clones, censoring) — CONSORT-style drawio XML
+- HR / RMST / E-value / sensitivity result CSVs

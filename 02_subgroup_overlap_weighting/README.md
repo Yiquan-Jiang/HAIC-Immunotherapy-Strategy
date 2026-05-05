@@ -4,8 +4,6 @@ Concurrent vs delayed-sequential systemic therapy in **high-risk subgroups**,
 re-weighted by overlap weights to handle small-cell extreme propensity scores
 in selected pairwise comparisons.
 
-> **Paper output:** Fig 4.
-
 ## Pairwise comparisons addressed
 
 1. `HAIC + ICI concurrent` vs `HAIC → ICI`
@@ -30,15 +28,13 @@ step7_subgroup_ow.R          ── OW-weighted Cox HR per subgroup
 step7_subgroup_analysis.py   ── ΔRMST + interaction P (LRT)
        │
        ▼
-step7_subgroup_plots.py      ── Forest panels for Fig 4
+step7_subgroup_plots.py      ── Subgroup forest panels
 ```
 
 ## Outputs
 
-| Output                                  | Paper element |
-|-----------------------------------------|---------------|
-| Subgroup forest panels (concurrent vs sequential) | **Fig 4** |
-| Per-subgroup balance tables             | Supplements   |
+- Subgroup forest panels (concurrent vs sequential)
+- Per-subgroup balance tables and love plots
 
 ## Statistical notes
 

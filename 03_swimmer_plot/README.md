@@ -4,8 +4,6 @@ Per-patient timelines for up to 50 randomly sampled patients per group,
 showing HAIC cycles, immunotherapy / antiangiogenic initiation, response,
 TACE / surgery / radiofrequency ablation events, and death / last follow-up.
 
-> **Paper output:** Fig 5.
-
 ## Scripts
 
 | Script | Description |
@@ -15,8 +13,6 @@ TACE / surgery / radiofrequency ablation events, and death / last follow-up.
 
 ## Outputs
 
-| Output | Paper element |
-|---|---|
-| `swimmer_plot_7groups.{pdf,png}` | **Fig 5** |
-| `haic_then_i_to_target_interval.{pdf,png}` | Supplementary timing panel |
-| Per-patient event-time table     | Supplements |
+- `swimmer_plot_7groups.{pdf,png}` — per-patient timelines for the 7 treatment groups
+- `haic_then_i_to_target_interval.{pdf,png}` — HAIC → ICI interval / target-window adherence
+- Per-patient event-time table

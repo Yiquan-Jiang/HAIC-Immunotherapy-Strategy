@@ -4,8 +4,8 @@ Two independent causal-adjustment methods, generated as parallel figure sets.
 
 | Role            | Method                                             | Script                              | Output dir |
 |-----------------|----------------------------------------------------|-------------------------------------|------------|
-| **Publication (main + supp)** | Route B: composite cohort + IPTW-weighted Cox | `make_publication_figures_iptw.R`   | `iptw/`    |
-| **Sensitivity (supp)**        | Route A: PSM 1:1 match + unweighted Cox       | `make_publication_figures_psm.R`    | `psm/`     |
+| **Primary**     | Route B: composite cohort + IPTW-weighted Cox      | `make_publication_figures_iptw.R`   | `iptw/`    |
+| **Sensitivity** | Route A: PSM 1:1 match + unweighted Cox            | `make_publication_figures_psm.R`    | `psm/`     |
 
 Re-run:
 ```bash
@@ -34,6 +34,7 @@ iptw/  or  psm/
 │   Fig_Supp_RCS_Baseline.{pdf,png,tiff}           5×2
 │   Fig_Supp_RCS_PreIT.{pdf,png,tiff}              5×2
 │   Fig_Supp_RCS_PreIT_ChangeRate.{pdf,png,tiff}   5×2
+│   (output filenames defined in the R scripts)
 └── total_os/         ← Total OS (sensitivity)
 ```
 

@@ -9,8 +9,6 @@ Apply the cut-points identified in Stage 2 (RCS interaction) to generate
 publication-ready interaction forest plots showing subgroup heterogeneity of
 treatment effect.
 
-> **Paper output:** Fig 5 / Fig 6 forest panels + supplementary forests.
-
 ## Comparisons covered
 
 | Script | Pair (PSM ID) | Treatment vs. Reference |
@@ -31,9 +29,10 @@ treatment effect.
 
 ## Outputs
 
-| Output | Paper element |
-|---|---|
-| `Fig_PSM02_forest.{pdf,png}` | **Fig 5** (or related Stage-2 forest) |
-| `Fig_PSM06_forest.{pdf,png}` | **Fig 5** (or related Stage-2 forest) |
-| `Fig_PSM05_forest.{pdf,png}` | Supplements |
-| Subgroup analysis tables (HR, ΔRMST, P_interaction) | Supplementary tables |
+Each script writes to a per-comparison directory under
+`output/step2_interaction_forest/<psm_XX_…>/`:
+
+- Forest plot (HR, 95% CI, ΔRMST per subgroup) — `*.pdf` / `*.png`
+- 42-day landmark sensitivity forest — `*_SuppFig_lm_forest.{pdf,png}`
+- IPTW balance tables (for the IPTW-augmented variants) — `IPTW_balance_table.csv`
+- Subgroup analysis tables (HR, ΔRMST, P_interaction) — `.csv`

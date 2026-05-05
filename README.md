@@ -36,54 +36,50 @@ A causal-inference framework that compares **seven first-line treatment strategi
 ```
 Stage 1  Confounder-adjusted comparisons
          IPTW (CBPS) + 21 pairwise PSM + Overlap Weighting
-         → Tables 1-5, Fig 2, Fig 3, Fig 4
                        │
                        ▼
 Stage 2  Biomarker × treatment interaction
          RCS continuous interaction + categorical forest plots
-         → Fig 5 (swimmer), Fig 6 (RCS matrix)
                        │
                        ▼
 Stage 3  Target Trial Emulation (CCW + IPCW)
          Dynamic biomarker-guided strategy vs. early combination
-         → Fig 7 (two parallel cohorts: ICI-only & ICI + Anti-angio)
 ```
 
 ---
 
-## Repository layout — mapped to the paper
+## Repository layout
 
 ```
-HAIC-Immunotherapy-Strategy-JCO/
+HAIC-Immunotherapy-Strategy/
 ├── 00_data_preparation/                   ← Build analysis-ready dataset (7 groups)
+│   └── step0_prepare_data.py
 │
 ├── 01_psm_iptw_overall_survival/          ← Stage 1
-│   │   Output: Tables 1-5, Fig 2, Fig 3
 │   ├── step3_psm_analysis.R                  one-to-one nearest-neighbor PSM
 │   ├── step3b_psm_vs_template.R              standardized PSM vs template
-│   ├── step4_km_curves.py                    KM curves overall (Fig 2A unweighted)
-│   ├── step4b_km_template_matched.py         KM curves of PSM-matched pairs (Fig 3)
-│   ├── step5_forest_plot.py                  HR/RMST forest summary
+│   ├── step4_km_curves.py                    KM curves (overall, unweighted / IPTW)
+│   ├── step4b_km_template_matched.py         KM curves of PSM-matched pairs
+│   ├── step5_forest_plot.py                  HR / RMST forest summary
 │   ├── step5b_forest_vs_IT_concurrent.py     vs HAIC + ICI concurrent
 │   ├── step5c_forest_vs_HAIC_alone.py        vs HAIC alone (21 pairwise)
-│   └── step6_tables_and_loveplots.R          Tables 1-5 + love plots (balance)
+│   └── step6_tables_and_loveplots.R          baseline tables + love plots (balance)
 │
-├── 02_subgroup_overlap_weighting/         ← Fig 4 high-risk subgroups
-│   │   Concurrent vs delayed-sequential under overlap weighting
+├── 02_subgroup_overlap_weighting/         ← Subgroup analysis (overlap weighting)
 │   ├── step7_ow_balance_table.R              OW balance tables
 │   ├── step7_ow_balance_figure.py            OW love-plot
 │   ├── step7_subgroup_ow.R                   Cox HR per subgroup (OW-weighted)
 │   ├── step7_subgroup_analysis.py            ΔRMST + interaction tests
-│   └── step7_subgroup_plots.py               Forest panels for Fig 4
+│   └── step7_subgroup_plots.py               Subgroup forest panels
 │
-├── 03_swimmer_plot/                       ← Fig 5 + companion timing visualization
-│   ├── swimmer_plot_7groups.R                Per-patient timelines for 7 groups
+├── 03_swimmer_plot/                       ← Per-patient timelines
+│   ├── swimmer_plot_7groups.R                Swimmer plots for the 7 groups
 │   └── plot_haic_then_i_to_target_interval.R HAIC → ICI interval / target-window adherence
 │
 ├── 04_biomarker_dynamics/                 ← Longitudinal AFP/PIVKA-II/inflammatory indices
 │   └── psm_afp_pivka_dynamics.py             Trajectories within PSM-matched pairs
 │
-├── 05_rcs_interaction/                    ← Stage 2 (continuous) — Fig 6
+├── 05_rcs_interaction/                    ← Stage 2 (continuous biomarkers)
 │   │   See FINAL_SCRIPTS.md for the authoritative 4-script index
 │   │   (Route A: PSM unweighted; Route B: composite-cohort IPTW)
 │   ├── FINAL_SCRIPTS.md
@@ -95,29 +91,28 @@ HAIC-Immunotherapy-Strategy-JCO/
 │   │   ├── 00a_extract_pre_it_labs.py        Pre-IT lab extraction helper
 │   │   ├── 01_rcs_afp_pivka_composite.R      Route B: single-indicator RCS
 │   │   └── 02_rcs_matrix_panel.R             Route B: 8 × 5 matrix panel
-│   └── publication_figures/                  Final 5 × 6 publication panels
+│   └── publication_figures/                  5 × 6 publication panels
 │       ├── README.md
-│       ├── make_publication_figures_iptw.R   Route B → main figure
-│       └── make_publication_figures_psm.R    Route A → sensitivity figure
+│       ├── make_publication_figures_iptw.R   Route B (primary)
+│       └── make_publication_figures_psm.R    Route A (sensitivity)
 │
-├── 06_categorical_forest_interaction/     ← Stage 2 (categorical) — Fig 5 / Fig 6 forest
-│   │   "Immunotherapy benefit × categorical-variable" interaction
-│   │   (originally located under publication_figures/, renamed for clarity)
-│   ├── 01_publication_figures.py                 PSM02: HAIC → ICI
-│   ├── 02_publication_figures_ids06_IplusT.py    PSM06: HAIC → ICI + Anti-angio
-│   ├── 03_publication_figures_iptw_psm02.py      PSM02 IPTW + PSM combined
+├── 06_categorical_forest_interaction/     ← Stage 2 (categorical biomarkers)
+│   │   "Immunotherapy benefit × categorical-variable" interaction forest plots
+│   ├── 01_publication_figures.py                  PSM02: HAIC → ICI
+│   ├── 02_publication_figures_ids06_IplusT.py     PSM06: HAIC → ICI + Anti-angio
+│   ├── 03_publication_figures_iptw_psm02.py       PSM02 IPTW + PSM combined
 │   ├── 03_publication_figures_ids05_IplusT_concurrent.py  PSM05 concurrent triplet
 │   ├── 04_publication_figures_iptw_psm06_IplusT.py
 │   └── 05_publication_figures_iptw_psm05_IplusT_concurrent.py
 │
-├── 07_target_trial_emulation/             ← Stage 3 — Fig 7
+├── 07_target_trial_emulation/             ← Stage 3
 │   │   Single canonical driver: tte_IT_R_two_cohorts.R (IT_RULES_v2)
 │   │   handles both cohorts in one invocation:
 │   │     - Cohort A: cohort_3matched     — ICI + antiangiogenic add-on
 │   │     - Cohort B: cohort_7group_psm02 — ICI-only add-on
 │   │   Adaptive On Demand vs Early Combination, CCW + stabilized IPCW.
 │   ├── tte_IT_R_two_cohorts.R                R core: CCW + IPCW + Cox + RMST
-│   ├── tte_IT_R_figures_two_cohorts.py       Publication figures (KM, ΔRMST, IPCW)
+│   ├── tte_IT_R_figures_two_cohorts.py       Figures (KM, ΔRMST, IPCW)
 │   ├── tte_pathway_visualization.R           Strategy pathway diagram
 │   ├── tte_pathway_visualization_alt_samples.R
 │   └── generate_tte_flow_drawio_two_cohorts.R   CONSORT-style flow (drawio XML)
@@ -146,7 +141,7 @@ install.packages(c(
 ))
 ```
 
-### Pipeline (paper-order)
+### Pipeline
 
 ```bash
 # Stage 0: prepare analysis-ready dataset (requires raw inputs)
@@ -159,13 +154,13 @@ python  01_psm_iptw_overall_survival/step4b_km_template_matched.py
 python  01_psm_iptw_overall_survival/step5_forest_plot.py
 Rscript 01_psm_iptw_overall_survival/step6_tables_and_loveplots.R
 
-# Stage 1b: subgroup OW (Fig 4)
+# Subgroup analysis with overlap weighting
 Rscript 02_subgroup_overlap_weighting/step7_ow_balance_table.R
 Rscript 02_subgroup_overlap_weighting/step7_subgroup_ow.R
 python  02_subgroup_overlap_weighting/step7_subgroup_analysis.py
 python  02_subgroup_overlap_weighting/step7_subgroup_plots.py
 
-# Fig 5: swimmer + HAIC → ICI interval visualization
+# Swimmer plots + HAIC → ICI interval visualization
 Rscript 03_swimmer_plot/swimmer_plot_7groups.R
 Rscript 03_swimmer_plot/plot_haic_then_i_to_target_interval.R
 
@@ -173,20 +168,20 @@ Rscript 03_swimmer_plot/plot_haic_then_i_to_target_interval.R
 python  04_biomarker_dynamics/psm_afp_pivka_dynamics.py
 
 # Stage 2a: RCS interaction — see 05_rcs_interaction/FINAL_SCRIPTS.md
-python  05_rcs_interaction/build_cohort_psm.py                                 # Route A
-python  05_rcs_interaction/afp_pivka_composite/00_build_composite_cohorts.py   # Route B
-Rscript 05_rcs_interaction/RCS_PSM_dual_timescale.R                            # Route A: single-indicator
-Rscript 05_rcs_interaction/RCS_PSM_matrix_panel.R                              # Route A: 8×5 matrix
+python  05_rcs_interaction/build_cohort_psm.py                                # Route A
+python  05_rcs_interaction/afp_pivka_composite/00_build_composite_cohorts.py  # Route B
+Rscript 05_rcs_interaction/RCS_PSM_dual_timescale.R                           # Route A: single-indicator
+Rscript 05_rcs_interaction/RCS_PSM_matrix_panel.R                             # Route A: 8×5 matrix
 Rscript 05_rcs_interaction/afp_pivka_composite/01_rcs_afp_pivka_composite.R ALL  # Route B: single-indicator
 Rscript 05_rcs_interaction/afp_pivka_composite/02_rcs_matrix_panel.R         ALL  # Route B: 8×5 matrix
 RMS_RCS_N_BOOT=300 Rscript 05_rcs_interaction/publication_figures/make_publication_figures_iptw.R
 RMS_RCS_N_BOOT=300 Rscript 05_rcs_interaction/publication_figures/make_publication_figures_psm.R
 
-# Stage 2b: categorical interaction forest (Fig 5 / Fig 6 panels)
+# Stage 2b: categorical interaction forest panels
 python  06_categorical_forest_interaction/01_publication_figures.py
 python  06_categorical_forest_interaction/02_publication_figures_ids06_IplusT.py
 
-# Stage 3: Target Trial Emulation (Fig 7) — IT_RULES_v2 drives both cohorts
+# Stage 3: Target Trial Emulation — IT_RULES_v2 drives both cohorts
 Rscript 07_target_trial_emulation/tte_IT_R_two_cohorts.R  data/
 python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 ```

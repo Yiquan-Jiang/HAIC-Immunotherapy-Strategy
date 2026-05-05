@@ -11,8 +11,8 @@
 
 - **路线 A vs B**：两种独立方法论（PSM 匹配 vs IPTW 加权），互为敏感性分析
 - **single vs matrix**：同一路线内的两种出图形式
-  - `single_indicator` → 分变量组合图，适合补充材料 / 深入查看
-  - `matrix_panel` → 8×5 大图（AFP / PIVKA / PIV / SII / NLR / PLR / MONOCYTE / ALBI × Baseline / Pre-HAIC-3 / Pre-IT / Pre-HAIC-3 Change Rate / Pre-IT Change Rate），适合正文 Figure 总览
+  - `single_indicator` → 分变量组合图（每个生物标志物一张图）
+  - `matrix_panel` → 8×5 总览图（AFP / PIVKA / PIV / SII / NLR / PLR / MONOCYTE / ALBI × Baseline / Pre-HAIC-3 / Pre-IT / Pre-HAIC-3 Change Rate / Pre-IT Change Rate）
 
 ## 输出位置
 

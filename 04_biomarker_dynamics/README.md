@@ -5,8 +5,6 @@ Track AFP, PIVKA-II, ALBI score, NLR, SII and PIV across pre-HAIC and the
 to provide a biological correlate for the equivalent OS observed across
 HAIC + systemic-therapy strategies.
 
-> **Paper output:** Results §"Longitudinal tumor biomarker dynamics" + supporting supplementary panels.
-
 ## Scripts
 
 | Script | Description |
@@ -16,4 +14,4 @@ HAIC + systemic-therapy strategies.
 ## Outputs
 
 - Median trajectory plots (AFP, PIVKA-II, ALBI, NLR, SII, PIV) per PSM pair
-- Tabulated landmark biomarker statistics used in the Results section
+- Tabulated landmark biomarker statistics

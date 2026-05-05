@@ -5,8 +5,6 @@ comparison of HAIC alone vs. each combination strategy, to identify
 **continuous biomarkers that modify the relative efficacy** of adding
 systemic therapy to HAIC.
 
-> **Paper output:** Fig 6 (RCS interaction matrix) + supplementary panels.
-
 > **Authoritative script index:** see [`FINAL_SCRIPTS.md`](./FINAL_SCRIPTS.md)
 > in this folder. Two parallel methodological routes (PSM 1:1 unweighted Cox
 > vs. composite-cohort IPTW-weighted Cox) act as **independent sensitivity
@@ -32,10 +30,10 @@ systemic therapy to HAIC.
 │   ├── 00a_extract_pre_it_labs.py     ── Pre-IT lab extraction helper
 │   ├── 01_rcs_afp_pivka_composite.R   ── Route B: single-indicator
 │   └── 02_rcs_matrix_panel.R          ── Route B: 8×5 matrix
-└── publication_figures/               ← Final 5×6 publication panels
+└── publication_figures/               ← 5×6 publication panels
     ├── README.md
-    ├── make_publication_figures_iptw.R   (Route B → main panel)
-    └── make_publication_figures_psm.R    (Route A → sensitivity panel)
+    ├── make_publication_figures_iptw.R   (Route B → primary)
+    └── make_publication_figures_psm.R    (Route A → sensitivity)
 ```
 
 ## Pipeline
@@ -53,7 +51,7 @@ Rscript RCS_PSM_matrix_panel.R                             # 8×5 matrix
 Rscript afp_pivka_composite/01_rcs_afp_pivka_composite.R ALL
 Rscript afp_pivka_composite/02_rcs_matrix_panel.R         ALL
 
-# Publication-ready 5×6 panels (assemble Route B for main, Route A for sensitivity)
+# Publication-ready 5×6 panels (Route B primary, Route A sensitivity)
 RMS_RCS_N_BOOT=300 Rscript publication_figures/make_publication_figures_iptw.R
 RMS_RCS_N_BOOT=300 Rscript publication_figures/make_publication_figures_psm.R
 ```
