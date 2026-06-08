@@ -16,9 +16,12 @@ from lifelines import KaplanMeierFitter, CoxPHFitter
 from lifelines.statistics import logrank_test
 
 BASE_DIR   = "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
+EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
+SFX = "_8group" if EIGHT_GROUP else ""
+DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
 DATA_DIR   = os.path.join(BASE_DIR, 'data')
-RES_DIR    = os.path.join(BASE_DIR, 'results', 'psm_balance_tables_complete')
-OUTPUT_DIR = os.path.join(BASE_DIR, 'figures', 'psm_pub_quality')
+RES_DIR    = os.path.join(BASE_DIR, 'results', 'psm_balance_tables_complete'+SFX)
+OUTPUT_DIR = os.path.join(BASE_DIR, 'figures', 'psm_pub_quality'+SFX)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 plt.rcParams.update({
@@ -53,7 +56,7 @@ GROUP_ORDER = [
     'HAIC_alone', 'HAIC+I_concurrent', 'HAIC_then_I',
     'HAIC+T_concurrent', 'HAIC_then_T',
     'HAIC+I+T_concurrent', 'HAIC_then_I+T',
-]
+] + (['Systemic_I+T'] if EIGHT_GROUP else [])
 GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
     'HAIC+I_concurrent':     'HAIC + Immuno (conc.)',
@@ -62,6 +65,7 @@ GROUP_LABELS = {
     'HAIC_then_T':           'HAIC → Target',
     'HAIC+I+T_concurrent':   'HAIC + I + T (conc.)',
     'HAIC_then_I+T':         'HAIC → I + T',
+    'Systemic_I+T':          'Systemic I+T',
 }
 
 # ════════════════════════════════════════════════════════════════════
@@ -69,7 +73,7 @@ GROUP_LABELS = {
 # ════════════════════════════════════════════════════════════════════
 print('1. 计算 PSM 前 HR...')
 
-df = pd.read_csv(os.path.join(DATA_DIR, 'analysis_ready.csv'))
+df = pd.read_csv(os.path.join(DATA_DIR, DATA_CSV))
 df = df[df['os_months'] >= 0].copy()
 df['group'] = df['main_group']
 df['death_status'] = df['death_status'].map(
@@ -86,10 +90,11 @@ for i, g1 in enumerate(GROUP_ORDER):
 
 
 def calc_hr(sub1, sub2):
+    # HR 方向：sub1 相对于 sub2（sub2 作参考）
     lr  = logrank_test(sub1['os_months'], sub2['os_months'],
                        sub1['death_status'], sub2['death_status'])
     tmp = pd.concat([sub1, sub2])[['os_months', 'death_status']].copy()
-    tmp['treat'] = ([0]*len(sub1) + [1]*len(sub2))
+    tmp['treat'] = ([1]*len(sub1) + [0]*len(sub2))
     cph = CoxPHFitter()
     cph.fit(tmp, duration_col='os_months', event_col='death_status')
     hr    = float(np.exp(cph.params_['treat']))
@@ -252,10 +257,10 @@ xticks = [0.15, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 3.0, 5.0]
 ax.set_xticks(xticks)
 ax.set_xticklabels([str(x) for x in xticks], fontsize=7)
 
-ax.text(0.40, -0.02, '\u2190 Favors Group 2',
+ax.text(0.40, -0.02, '\u2190 Favors Group 1',
         ha='center', va='top', fontsize=7, color='#666666',
         transform=ax.transAxes)
-ax.text(0.72, -0.02, 'Favors Group 1 \u2192',
+ax.text(0.72, -0.02, 'Favors Group 2 \u2192',
         ha='center', va='top', fontsize=7, color='#666666',
         transform=ax.transAxes)
 

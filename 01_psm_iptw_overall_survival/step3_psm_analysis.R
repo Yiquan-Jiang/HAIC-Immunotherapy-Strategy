@@ -14,9 +14,12 @@ library(survival)
 library(survminer)
 
 BASE_DIR   <- "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
+EIGHT_GROUP <- Sys.getenv("EIGHT_GROUP", "0") == "1"
+SFX <- if (EIGHT_GROUP) "_8group" else ""
+DATA_CSV <- if (EIGHT_GROUP) "analysis_ready_8group.csv" else "analysis_ready.csv"
 DATA_DIR   <- file.path(BASE_DIR, "data")
-OUTPUT_DIR <- file.path(BASE_DIR, "results", "psm_balance_tables_complete")
-FIGURE_DIR <- file.path(BASE_DIR, "figures", "psm_final")
+OUTPUT_DIR <- file.path(BASE_DIR, "results", paste0("psm_balance_tables_complete", SFX))
+FIGURE_DIR <- file.path(BASE_DIR, "figures", paste0("psm_final", SFX))
 LOG_DIR    <- file.path(BASE_DIR, "logs")
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(FIGURE_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -38,9 +41,11 @@ group_colors <- c(
   "HAIC+T_concurrent"     = "#F0E442",
   "HAIC_then_T"           = "#CC79A7",
   "HAIC+I+T_concurrent"   = "#D55E00",
-  "HAIC_then_I+T"         = "#56B4E9"
+  "HAIC_then_I+T"         = "#56B4E9",
+  "Systemic_I+T"          = "#117733"
 )
 GROUP_ORDER <- names(group_colors)
+if (!EIGHT_GROUP) GROUP_ORDER <- setdiff(GROUP_ORDER, "Systemic_I+T")
 
 # ════════════════════════════════════════════════════════════════════
 # 1. 读取数据
@@ -48,7 +53,7 @@ GROUP_ORDER <- names(group_colors)
 cat("\n1. 读取数据...\n")
 
 analysis_data <- read_csv(
-  file.path(DATA_DIR, "analysis_ready.csv"),
+  file.path(DATA_DIR, DATA_CSV),
   show_col_types = FALSE
 ) %>%
   filter(os_months >= 0) %>%
@@ -174,6 +179,9 @@ for (comp in comparisons) {
   min_n <- min(n_treat, n_ctrl)
   caliper_val <- if (min_n < 150) 0.25 else if (min_n < 300) 0.15 else 0.10
 
+  # 固定每个对比的随机种子，确保 matchit 对并列距离的 tie-breaking 完全可重复
+  set.seed(1000L + i)
+
   match_result <- tryCatch(
     matchit(
       PSM_FORMULA,
@@ -211,11 +219,14 @@ for (comp in comparisons) {
             file.path(OUTPUT_DIR, sprintf("matched_ids_%02d_%s.csv", i, ckey)))
 
   # 生存分析
+  # HR 方向约定：HR = h(Group1) / h(Group2)，即 "A_vs_B" 表示 A 相对于 B
+  # 故 Cox 模型使用 g2 作为参考组，coef 即 g1 相对 g2 的 log-HR
   surv_fit     <- survfit(Surv(os_months, death_status) ~ group_label, data = matched_data)
   logrank_test <- survdiff(Surv(os_months, death_status) ~ group_label, data = matched_data)
   logrank_p    <- 1 - pchisq(logrank_test$chisq, df = 1)
   median_os    <- summary(surv_fit)$table[, "median"]
-  cox_model    <- coxph(Surv(os_months, death_status) ~ group_label, data = matched_data)
+  cox_model    <- coxph(Surv(os_months, death_status) ~ relevel(group_label, ref = g2),
+                        data = matched_data)
   hr           <- exp(coef(cox_model))
   hr_ci        <- exp(confint(cox_model))
 

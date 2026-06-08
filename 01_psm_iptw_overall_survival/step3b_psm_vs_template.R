@@ -19,8 +19,11 @@ library(survival)
 library(survey)
 
 BASE_DIR   <- "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
+EIGHT_GROUP <- Sys.getenv("EIGHT_GROUP", "0") == "1"
+SFX <- if (EIGHT_GROUP) "_8group" else ""
+DATA_CSV <- if (EIGHT_GROUP) "analysis_ready_8group.csv" else "analysis_ready.csv"
 DATA_DIR   <- file.path(BASE_DIR, "data")
-OUTPUT_DIR <- file.path(BASE_DIR, "results", "psm_vs_template")
+OUTPUT_DIR <- file.path(BASE_DIR, "results", paste0("psm_vs_template", SFX))
 LOG_DIR    <- file.path(BASE_DIR, "logs")
 dir.create(OUTPUT_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(LOG_DIR,    showWarnings = FALSE, recursive = TRUE)
@@ -40,6 +43,18 @@ GROUP_ORDER <- c(
   "HAIC+T_concurrent", "HAIC_then_T",
   "HAIC+I+T_concurrent", "HAIC_then_I+T"
 )
+if (EIGHT_GROUP) GROUP_ORDER <- c(GROUP_ORDER, "Systemic_I+T")
+
+GROUP_COLORS <- c(
+  "HAIC+I+T_concurrent" = "#E69F00",
+  "HAIC_alone"          = "#56B4E9",
+  "HAIC+T_concurrent"   = "#CC79A7",
+  "HAIC+I_concurrent"   = "#0072B2",
+  "HAIC_then_T"         = "#D55E00",
+  "HAIC_then_I+T"       = "#F0E442",
+  "HAIC_then_I"         = "#999999",
+  "Systemic_I+T"        = "#009E73"
+)
 
 # ════════════════════════════════════════════════════════════════════
 # 1. 读取数据
@@ -47,7 +62,7 @@ GROUP_ORDER <- c(
 cat("\n1. 读取数据...\n")
 
 analysis_data <- read_csv(
-  file.path(DATA_DIR, "analysis_ready.csv"),
+  file.path(DATA_DIR, DATA_CSV),
   show_col_types = FALSE
 ) %>%
   filter(os_months >= 0) %>%
@@ -339,10 +354,189 @@ km_export <- do.call(rbind, km_all)
 write_csv(km_export, file.path(OUTPUT_DIR, "iptw_km_data.csv"))
 cat(sprintf("   已保存: iptw_km_data.csv (%d 行)\n", nrow(km_export)))
 
+# ════════════════════════════════════════════════════════════════════
+# 9. [TIER1 NEW] RMST 与 Landmark 生存率
+#    PH 假设严重违背时的主要疗效指标
+#    - RMST: 0..τ 内 KM 曲线下面积，受限平均生存时间
+#    - Landmark: τ 时点的生存概率
+#    SE: case-weighted survfit (model-based, 标准做法)
+#    全局检验: K-1 维 Wald χ²，组间不相关 → Σ 由对角块构造
+# ════════════════════════════════════════════════════════════════════
+cat("\n9. [TIER1] RMST 与 landmark 生存率（PH 违背的主要疗效指标）...\n")
+
+RMST_TAUS_REQ <- c(24, 36, 60)
+LANDMARK_TS   <- c(12, 24, 36, 48, 60)
+
+# 9.0 选择跨组可比的 τ 上限（取各组最大随访时间的最小值）
+group_max_t <- sapply(GROUP_ORDER, function(g) {
+  max(analysis_data$os_months[analysis_data$group == g], na.rm = TRUE)
+})
+admissible_tau <- min(group_max_t)
+cat(sprintf("   各组随访上限: min over groups = %.1f mo\n", admissible_tau))
+RMST_TAUS <- RMST_TAUS_REQ[RMST_TAUS_REQ <= admissible_tau]
+if (length(RMST_TAUS) < length(RMST_TAUS_REQ)) {
+  cat(sprintf("   剔除 τ > %.1f: %s\n",
+              admissible_tau,
+              paste(setdiff(RMST_TAUS_REQ, RMST_TAUS), collapse = ", ")))
+}
+
+# 9a. 每组每 τ 的 RMST + SE
+get_rmst <- function(fit, tau) {
+  tab <- summary(fit, rmean = tau)$table
+  i_r  <- which(grepl("rmean$", names(tab)) & !grepl("se", names(tab)))
+  i_se <- which(grepl("se\\(rmean\\)", names(tab)))
+  list(rmean = unname(tab[i_r[1]]), se = unname(tab[i_se[1]]))
+}
+
+rmst_rows     <- list()
+landmark_rows <- list()
+
+for (g in GROUP_ORDER) {
+  sub <- analysis_data %>% filter(group == g)
+  fit_g <- survfit(Surv(os_months, death_status) ~ 1,
+                   data = sub, weights = iptw_weight)
+
+  for (tau in RMST_TAUS) {
+    r <- get_rmst(fit_g, tau)
+    rmst_rows[[length(rmst_rows) + 1]] <- data.frame(
+      group   = g, tau = tau,
+      n       = nrow(sub),
+      events  = sum(sub$death_status == 1),
+      rmst    = r$rmean,
+      se      = r$se,
+      ci_lo   = r$rmean - 1.96 * r$se,
+      ci_hi   = r$rmean + 1.96 * r$se,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  for (tt in LANDMARK_TS) {
+    if (tt > admissible_tau) next
+    if (tt < min(fit_g$time)) {
+      s   <- 1; se_h <- 0
+    } else {
+      idx <- max(which(fit_g$time <= tt))
+      s   <- fit_g$surv[idx]
+      se_h <- fit_g$std.err[idx]
+    }
+    if (s > 0 && s < 1) {
+      log_log_se <- se_h / abs(log(s))
+      ci_lo_t <- s ^ exp( 1.96 * log_log_se)
+      ci_hi_t <- s ^ exp(-1.96 * log_log_se)
+      se_s    <- s * se_h
+    } else {
+      ci_lo_t <- s; ci_hi_t <- s; se_s <- 0
+    }
+    landmark_rows[[length(landmark_rows) + 1]] <- data.frame(
+      group       = g, time = tt,
+      n_at_risk   = sum(sub$os_months >= tt),
+      surv        = s,
+      se_surv     = se_s,
+      se_log_surv = se_h,
+      ci_lo       = ci_lo_t,
+      ci_hi       = ci_hi_t,
+      stringsAsFactors = FALSE
+    )
+  }
+}
+
+rmst_df     <- do.call(rbind, rmst_rows)
+landmark_df <- do.call(rbind, landmark_rows)
+
+# 9b. Pairwise RMSTD (vs HAIC_alone)
+rmstd_rows <- list()
+for (tau in RMST_TAUS) {
+  ref_row <- rmst_df %>% filter(group == REF_GROUP_HR, tau == !!tau)
+  for (g in GROUP_ORDER) {
+    if (g == REF_GROUP_HR) next
+    cur <- rmst_df %>% filter(group == g, tau == !!tau)
+    diff <- cur$rmst - ref_row$rmst
+    se_d <- sqrt(cur$se^2 + ref_row$se^2)
+    z    <- diff / se_d
+    p    <- 2 * pnorm(-abs(z))
+    rmstd_rows[[length(rmstd_rows) + 1]] <- data.frame(
+      group     = g, ref = REF_GROUP_HR, tau = tau,
+      rmst_grp  = cur$rmst, rmst_ref = ref_row$rmst,
+      rmstd     = diff, se_rmstd = se_d,
+      ci_lo     = diff - 1.96 * se_d,
+      ci_hi     = diff + 1.96 * se_d,
+      P_value   = p,
+      stringsAsFactors = FALSE
+    )
+  }
+}
+rmstd_df <- do.call(rbind, rmstd_rows)
+
+# 多重比较校正（在每个 τ 内分别校正 6 个对比）
+rmstd_df <- rmstd_df %>%
+  group_by(tau) %>%
+  mutate(
+    P_holm = p.adjust(P_value, method = "holm"),
+    P_fdr  = p.adjust(P_value, method = "fdr")
+  ) %>%
+  ungroup() %>%
+  as.data.frame()
+
+# 9c. 全局 RMST χ² (每个 τ 一次)
+# 对比向量 c_k = RMST_k - RMST_ref, 维度 K-1
+# Cov(c_j, c_k) = Var(RMST_ref) (共享负参考项), 对角加 Var(RMST_k)
+global_rmst_rows <- list()
+for (tau in RMST_TAUS) {
+  ref_row <- rmst_df %>% filter(group == REF_GROUP_HR, tau == !!tau)
+  others  <- rmst_df %>% filter(group != REF_GROUP_HR, tau == !!tau)
+  others  <- others[match(setdiff(GROUP_ORDER, REF_GROUP_HR), others$group), ]
+  K1 <- nrow(others)
+  cvec <- others$rmst - ref_row$rmst
+  Sigma <- matrix(ref_row$se^2, nrow = K1, ncol = K1)
+  diag(Sigma) <- others$se^2 + ref_row$se^2
+  chisq_v <- as.numeric(t(cvec) %*% solve(Sigma) %*% cvec)
+  pglobal <- 1 - pchisq(chisq_v, df = K1)
+  global_rmst_rows[[length(global_rmst_rows) + 1]] <- data.frame(
+    Test      = sprintf("RMST_global_tau%d", tau),
+    Statistic = chisq_v, DF = K1, P_value = pglobal,
+    stringsAsFactors = FALSE
+  )
+}
+global_rmst_df <- do.call(rbind, global_rmst_rows)
+
+# 9d. 追加全局检验到 iptw_global_test.csv（保留旧行）
+prev_global <- read_csv(file.path(OUTPUT_DIR, "iptw_global_test.csv"),
+                        show_col_types = FALSE)
+prev_global <- prev_global %>% filter(!grepl("^RMST_global", Test))
+all_global  <- bind_rows(prev_global, global_rmst_df)
+write_csv(all_global, file.path(OUTPUT_DIR, "iptw_global_test.csv"))
+
+# 9e. 写文件
+write_csv(rmst_df,     file.path(OUTPUT_DIR, "iptw_rmst.csv"))
+write_csv(rmstd_df,    file.path(OUTPUT_DIR, "iptw_rmst_diff.csv"))
+write_csv(landmark_df, file.path(OUTPUT_DIR, "iptw_landmark.csv"))
+cat("   已保存: iptw_rmst.csv, iptw_rmst_diff.csv, iptw_landmark.csv\n")
+
+cat("\n   全局 RMST 检验 (vs HAIC_alone, K-1=6):\n")
+for (i in seq_len(nrow(global_rmst_df))) {
+  r <- global_rmst_df[i, ]
+  cat(sprintf("     %s: chi2=%.2f, df=%d, P=%s\n",
+              r$Test, r$Statistic, r$DF,
+              ifelse(r$P_value < 0.0001, "<0.0001", sprintf("%.4f", r$P_value))))
+}
+
+if (36 %in% RMST_TAUS) {
+  cat("\n   τ=36mo Pairwise RMSTD (vs HAIC_alone):\n")
+  for (i in seq_len(nrow(rmstd_df))) {
+    r <- rmstd_df[i, ]
+    if (r$tau != 36) next
+    cat(sprintf("     %-22s: RMSTD=%+5.2f mo (95%%CI %+5.2f to %+5.2f), P_raw=%s, P_holm=%s\n",
+                r$group, r$rmstd, r$ci_lo, r$ci_hi,
+                ifelse(r$P_value < 0.0001, "<0.0001", sprintf("%.4f", r$P_value)),
+                ifelse(r$P_holm  < 0.0001, "<0.0001", sprintf("%.4f", r$P_holm))))
+  }
+}
+
 cat("\n============================================================\n")
 cat("CBPS-IPTW 多组加权完成！\n")
 cat(sprintf("  方法: CBPS (ATE) + 权重截断 (P1/P99)\n"))
 cat(sprintf("  全模型 Cox: group ~ HAIC_alone (ref), robust SE\n"))
+cat(sprintf("  TIER1 新增: RMST + Landmark 生存率\n"))
 cat(sprintf("  总样本: %d\n", nrow(analysis_data)))
 cat(sprintf("结果: %s\n", OUTPUT_DIR))
 cat("============================================================\n")

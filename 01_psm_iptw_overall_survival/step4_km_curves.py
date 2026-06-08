@@ -24,9 +24,12 @@ from lifelines import KaplanMeierFitter, CoxPHFitter
 from lifelines.statistics import logrank_test, multivariate_logrank_test
 
 BASE_DIR = "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
+EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
+SFX = "_8group" if EIGHT_GROUP else ""
+DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
 DATA_DIR = os.path.join(BASE_DIR, 'data')
-FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km')
-RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_balance_tables_complete')
+FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km' + SFX)
+RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_balance_tables_complete' + SFX)
 os.makedirs(FIG_DIR, exist_ok=True)
 
 GROUP_COLORS = {
@@ -37,6 +40,7 @@ GROUP_COLORS = {
     'HAIC_then_T':           '#CC79A7',
     'HAIC+I+T_concurrent':   '#D55E00',
     'HAIC_then_I+T':         '#56B4E9',
+    'Systemic_I+T':          '#009E73',
 }
 GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
@@ -46,9 +50,13 @@ GROUP_LABELS = {
     'HAIC_then_T':           'HAIC → Target',
     'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
     'HAIC_then_I+T':         'HAIC → Immuno + Target',
+    'Systemic_I+T':          'Systemic I+T',
 }
-GROUP_ORDER = list(GROUP_COLORS.keys())
-LINESTYLES  = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1))]
+GROUP_ORDER = [
+    'HAIC_alone', 'HAIC+I_concurrent', 'HAIC_then_I', 'HAIC+T_concurrent',
+    'HAIC_then_T', 'HAIC+I+T_concurrent', 'HAIC_then_I+T',
+] + (["Systemic_I+T"] if EIGHT_GROUP else [])
+LINESTYLES  = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1)), (0, (3, 1, 1, 1, 1, 1))]
 
 plt.rcParams.update({
     'font.family':        'sans-serif',
@@ -126,12 +134,15 @@ def draw_km(ax_km, ax_risk, groups_data, title, xlim=60):
 
 
 def compute_cox_hr(t1, e1, t2, e2):
-    """Compute HR for group2 vs group1 (group1 as reference)."""
+    """Compute HR for group1 vs group2 (group2 as reference).
+
+    "A_vs_B" → HR represents A relative to B (B is reference).
+    """
     t = pd.concat([t1.reset_index(drop=True), t2.reset_index(drop=True)],
                   ignore_index=True)
     e = pd.concat([e1.reset_index(drop=True), e2.reset_index(drop=True)],
                   ignore_index=True)
-    g = pd.Series([0] * len(t1) + [1] * len(t2))
+    g = pd.Series([1] * len(t1) + [0] * len(t2))
     cph_df = pd.DataFrame({'T': t, 'E': e, 'group': g})
     cph = CoxPHFitter()
     cph.fit(cph_df, duration_col='T', event_col='E')
@@ -147,8 +158,8 @@ def add_stats_box(ax, p_val, hr=None, ci_lo=None, ci_hi=None,
     lines = [f'Log-rank {p_fmt}']
     if hr is not None:
         lines.append(f'HR = {hr:.2f} (95% CI {ci_lo:.2f}\u2013{ci_hi:.2f})')
-        if label1:
-            lines.append(f'  (ref: {label1})')
+        if label2:
+            lines.append(f'  (ref: {label2})')
     if med1 is not None and med2 is not None:
         if label1 and label2:
             lines.append(f'Median OS: {label1}: {med1:.1f} mo')
@@ -172,7 +183,7 @@ def save_fig(fig, name):
 # ════════════════════════════════════════════════════════════════════
 print('1. 读取数据...')
 
-df = pd.read_csv(os.path.join(DATA_DIR, 'analysis_ready.csv'))
+df = pd.read_csv(os.path.join(DATA_DIR, DATA_CSV))
 df = df[df['os_months'] >= 0].copy()
 df['group'] = pd.Categorical(df['main_group'], categories=GROUP_ORDER, ordered=True)
 df['death_status'] = df['death_status'].map(

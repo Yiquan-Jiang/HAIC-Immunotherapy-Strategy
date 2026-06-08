@@ -19,8 +19,11 @@ BASE_DIR = (
     "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/"
     "FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
 )
-RES_DIR = os.path.join(BASE_DIR, "results", "psm_balance_tables_complete")
-OUTPUT_DIR = os.path.join(BASE_DIR, "figures", "psm_pub_quality")
+EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
+SFX = "_8group" if EIGHT_GROUP else ""
+DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
+RES_DIR = os.path.join(BASE_DIR, "results", "psm_balance_tables_complete" + SFX)
+OUTPUT_DIR = os.path.join(BASE_DIR, "figures", "psm_pub_quality" + SFX)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 REF_GROUP = "HAIC+I+T_concurrent"
@@ -66,7 +69,7 @@ GROUP_ORDER = [
     "HAIC_then_T",
     "HAIC+I+T_concurrent",
     "HAIC_then_I+T",
-]
+] + (["Systemic_I+T"] if EIGHT_GROUP else [])
 
 GROUP_LABELS = {
     "HAIC_alone":            "HAIC alone",
@@ -76,6 +79,7 @@ GROUP_LABELS = {
     "HAIC_then_T":           "HAIC → Targeted therapy (seq.)",
     "HAIC+I+T_concurrent":   "HAIC + I + T (concurrent)",
     "HAIC_then_I+T":         "HAIC → I + T (sequential)",
+    "Systemic_I+T":          "Systemic I+T",
 }
 
 
@@ -84,18 +88,22 @@ def invert_hr_ci(hr, lo, hi):
 
 
 def row_vs_reference(df, other):
+    # step3 CSV HR 方向：HR = h(Group1) / h(Group2)
+    # 目标：HR = h(other) / h(REF_GROUP)
     m1 = (df["Group1"] == other) & (df["Group2"] == REF_GROUP)
     m2 = (df["Group1"] == REF_GROUP) & (df["Group2"] == other)
     if m1.any():
         r = df.loc[m1].iloc[0]
-        hr, lo, hi = float(r["HR"]), float(r["CI_lower"]), float(r["CI_upper"])
-        return invert_hr_ci(hr, lo, hi), int(r["N1_after"]), int(r["N2_after"]), float(r["P_value"])
-    if m2.any():
-        r = df.loc[m2].iloc[0]
+        # CSV HR 已是 h(other)/h(REF)，直接使用
         return (
             (float(r["HR"]), float(r["CI_lower"]), float(r["CI_upper"])),
-            int(r["N2_after"]), int(r["N1_after"]), float(r["P_value"]),
+            int(r["N1_after"]), int(r["N2_after"]), float(r["P_value"]),
         )
+    if m2.any():
+        r = df.loc[m2].iloc[0]
+        # CSV HR 是 h(REF)/h(other)，需翻转
+        hr, lo, hi = float(r["HR"]), float(r["CI_lower"]), float(r["CI_upper"])
+        return invert_hr_ci(hr, lo, hi), int(r["N2_after"]), int(r["N1_after"]), float(r["P_value"])
     raise ValueError(f"未找到 {other} vs {REF_GROUP}")
 
 

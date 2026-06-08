@@ -23,8 +23,11 @@ import numpy as np
 import pandas as pd
 
 BASE_DIR = "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
-FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km')
-RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_vs_template')
+EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
+SFX = "_8group" if EIGHT_GROUP else ""
+DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
+FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km' + SFX)
+RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_vs_template' + SFX)
 os.makedirs(FIG_DIR, exist_ok=True)
 
 REF_GROUP = 'HAIC_alone'
@@ -33,7 +36,7 @@ GROUP_ORDER = [
     'HAIC_alone', 'HAIC+I_concurrent', 'HAIC_then_I',
     'HAIC+T_concurrent', 'HAIC_then_T',
     'HAIC+I+T_concurrent', 'HAIC_then_I+T',
-]
+] + (["Systemic_I+T"] if EIGHT_GROUP else [])
 GROUP_COLORS = {
     'HAIC_alone':            '#0072B2',
     'HAIC+I_concurrent':     '#E69F00',
@@ -42,6 +45,7 @@ GROUP_COLORS = {
     'HAIC_then_T':           '#CC79A7',
     'HAIC+I+T_concurrent':   '#D55E00',
     'HAIC_then_I+T':         '#56B4E9',
+    'Systemic_I+T':          '#117733',
 }
 GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
@@ -51,6 +55,7 @@ GROUP_LABELS = {
     'HAIC_then_T':           'HAIC → Target',
     'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
     'HAIC_then_I+T':         'HAIC → Immuno + Target',
+    'Systemic_I+T':          'Systemic I+T',
 }
 
 plt.rcParams.update({

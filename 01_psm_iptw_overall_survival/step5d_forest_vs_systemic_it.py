@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Publication-quality forest plot: each treatment group vs HAIC alone (reference).
+Publication-quality forest plot: each HAIC-containing group vs Systemic I+T (reference).
 Two panels side by side: Left = Before IPTW, Right = After CBPS-IPTW.
-HR = h(row group) / h(HAIC_alone).  HR < 1 → row group better than HAIC alone.
+HR = h(row group) / h(Systemic_I+T).  HR < 1 → row group better than Systemic I+T.
 IPTW via WeightIt CBPS + weight truncation (P1/P99) + full-model Cox with robust SE.
 Style: Nature / Cell — table-style layout with aligned columns.
+
+This script is ALWAYS 8-group (Systemic I+T is the reference arm):
+reads analysis_ready_8group.csv, reads weighted-Cox input from
+results/psm_vs_template_8group/survival_gps_final.csv, writes figures to
+figures/psm_pub_quality_8group/.
 """
 
 import matplotlib
@@ -21,14 +26,13 @@ BASE_DIR = (
     "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/"
     "FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
 )
-EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
-SFX = "_8group" if EIGHT_GROUP else ""
-DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
+SFX = "_8group"
+DATA_CSV = "analysis_ready_8group.csv"
 DATA_DIR   = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "figures", "psm_pub_quality" + SFX)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-REF_GROUP = "HAIC_alone"
+REF_GROUP = "Systemic_I+T"
 
 plt.rcParams.update({
     "font.family": "sans-serif",
@@ -70,20 +74,28 @@ GROUP_ORDER = [
     "HAIC_then_T",
     "HAIC+I+T_concurrent",
     "HAIC_then_I+T",
-] + (["Systemic_I+T"] if EIGHT_GROUP else [])
+    "Systemic_I+T",
+]
 
 GROUP_COLORS = {
-    "Systemic_I+T": "#009E73",
+    "HAIC_alone":            "#00A087",
+    "HAIC+I_concurrent":     "#3C5488",
+    "HAIC_then_I":           "#4DBBD5",
+    "HAIC+T_concurrent":     "#E64B35",
+    "HAIC_then_T":           "#F39B7F",
+    "HAIC+I+T_concurrent":   "#8491B4",
+    "HAIC_then_I+T":         "#91D1C2",
+    "Systemic_I+T":          "#009E73",
 }
 
 GROUP_LABELS = {
     "HAIC_alone":            "HAIC alone",
     "HAIC+I_concurrent":     "HAIC + Immunotherapy (conc.)",
-    "HAIC_then_I":           "HAIC \u2192 Immunotherapy (seq.)",
+    "HAIC_then_I":           "HAIC → Immunotherapy (seq.)",
     "HAIC+T_concurrent":     "HAIC + Targeted therapy (conc.)",
-    "HAIC_then_T":           "HAIC \u2192 Targeted therapy (seq.)",
+    "HAIC_then_T":           "HAIC → Targeted therapy (seq.)",
     "HAIC+I+T_concurrent":   "HAIC + I + T (concurrent)",
-    "HAIC_then_I+T":         "HAIC \u2192 I + T (sequential)",
+    "HAIC_then_I+T":         "HAIC → I + T (sequential)",
     "Systemic_I+T":          "Systemic I+T",
 }
 
@@ -91,7 +103,7 @@ GROUP_LABELS = {
 # ════════════════════════════════════════════════════════════════════
 # 1. Compute Before-IPTW HR (unadjusted Cox, P from Cox Wald test)
 # ════════════════════════════════════════════════════════════════════
-print("1. 计算 IPTW 前 HR（各组 vs HAIC_alone, 未调整 Cox）...")
+print("1. 计算 IPTW 前 HR（各组 vs Systemic_I+T, 未调整 Cox）...")
 
 df = pd.read_csv(os.path.join(DATA_DIR, DATA_CSV))
 df = df[df["os_months"] >= 0].copy()
@@ -122,32 +134,57 @@ for g in others:
     print(f"  Before: {g} | n={len(sub)} | HR={hr:.2f} ({ci_lo:.2f}-{ci_hi:.2f}) P={p:.4f}")
 
 # ════════════════════════════════════════════════════════════════════
-# 2. Read After-IPTW HR from survival_gps_final.csv
+# 2. Read After-IPTW HR from survival_gps_final.csv and re-level to Systemic_I+T
 # ════════════════════════════════════════════════════════════════════
-print("\n2. 读取 CBPS-IPTW 加权后 HR (全模型 Cox, robust SE)...")
+# survival_gps_final.csv stores HR(g vs HAIC_alone) for the weighted full-model
+# Cox.  To express each HAIC group vs Systemic_I+T as reference we re-level the
+# SAME weighted Cox via the ratio identity
+#   HR(g vs Systemic_I+T) = HR(g vs HAIC_alone) / HR(Systemic_I+T vs HAIC_alone)
+# applied to the point estimate and both CI bounds (multiplicative).  No new
+# statistics are fitted; this is the re-leveling of the same weighted Cox.
+print("\n2. 读取 CBPS-IPTW 加权后 HR (全模型 Cox, robust SE), 重新设定 Systemic_I+T 为参照...")
 
 GPS_RES_DIR = os.path.join(BASE_DIR, "results", "psm_vs_template" + SFX)
 surv = pd.read_csv(os.path.join(GPS_RES_DIR, "survival_gps_final.csv"))
 
+ref_mask = surv["Group"] == REF_GROUP
+if not ref_mask.any():
+    raise ValueError(f"survival_gps_final.csv 中未找到参照组 {REF_GROUP} (vs HAIC_alone) 的加权 Cox 结果")
+ref_r = surv.loc[ref_mask].iloc[0]
+ref_hr = float(ref_r["HR"])              # HR(Systemic_I+T vs HAIC_alone)
+n_ref_after = int(ref_r["N"])            # weighted N of Systemic_I+T arm
+
 after_rows = []
 for g in others:
-    mask = surv["Group"] == g
-    if not mask.any():
-        print(f"  ⚠ 未找到 {g} 的 IPTW 结果")
-        continue
-    r = surv.loc[mask].iloc[0]
-    hr = float(r["HR"])
-    lo = float(r["CI_lower"])
-    hi = float(r["CI_upper"])
-    p  = float(r["P_value"])
-    p_holm = float(r["P_holm"]) if "P_holm" in r.index else p
-    n_other = int(r["N"])
-    n_ref   = int(r["N_ref"])
+    if g == "HAIC_alone":
+        # HAIC_alone is the original CSV reference (HR == 1 vs itself); re-level
+        # to Systemic_I+T: HR(HAIC_alone vs Systemic_I+T) = 1 / HR(Sys vs HAIC_alone)
+        hr_src, lo_src, hi_src = 1.0, 1.0, 1.0
+        p = float(ref_r["P_value"])
+        p_holm = float(ref_r["P_holm"]) if "P_holm" in ref_r.index else p
+        n_other = int(ref_r["N_ref"])    # N of HAIC_alone arm
+    else:
+        mask = surv["Group"] == g
+        if not mask.any():
+            print(f"  ⚠ 未找到 {g} 的 IPTW 结果")
+            continue
+        r = surv.loc[mask].iloc[0]
+        hr_src = float(r["HR"])
+        lo_src = float(r["CI_lower"])
+        hi_src = float(r["CI_upper"])
+        p  = float(r["P_value"])
+        p_holm = float(r["P_holm"]) if "P_holm" in r.index else p
+        n_other = int(r["N"])
+
+    # Re-level vs Systemic_I+T (divide by HR(Systemic_I+T vs HAIC_alone))
+    hr = hr_src / ref_hr
+    lo = lo_src / ref_hr
+    hi = hi_src / ref_hr
 
     after_rows.append(dict(
         group=g, label=GROUP_LABELS[g],
         HR=hr, CI_lower=lo, CI_upper=hi, P_value=p, P_holm=p_holm,
-        N=n_other, N_ref=n_ref, is_ref=False, phase="after",
+        N=n_other, N_ref=n_ref_after, is_ref=False, phase="after",
     ))
     p_fmt = "< 0.0001" if p < 0.0001 else f"{p:.4f}"
     p_holm_fmt = "< 0.0001" if p_holm < 0.0001 else f"{p_holm:.4f}"
@@ -156,7 +193,7 @@ for g in others:
 # Save CSV
 all_rows = before_rows + after_rows
 pd.DataFrame(all_rows).to_csv(
-    os.path.join(OUTPUT_DIR, "forest_vs_HAIC_alone.csv"), index=False)
+    os.path.join(OUTPUT_DIR, "forest_vs_systemic_it.csv"), index=False)
 
 # ════════════════════════════════════════════════════════════════════
 # 3. Draw side-by-side forest plots
@@ -250,11 +287,11 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
         ax_left.text(0.04, y, rp["label"], ha="left", **label_style)
 
         if is_ref:
-            ax_left.text(0.92, y, "\u2014", ha="center", va="center",
+            ax_left.text(0.92, y, "—", ha="center", va="center",
                          fontsize=8.5, color=COL_REF, fontweight="bold")
             ax_right.text(0.04, y, "1.00 (reference)", ha="left", va="center",
                           fontsize=8.5, color=COL_REF, fontweight="bold")
-            ax_right.text(0.85, y, "\u2014", ha="center", va="center",
+            ax_right.text(0.85, y, "—", ha="center", va="center",
                           fontsize=8.5, color=COL_REF, fontweight="bold")
             ax_forest.scatter([1.0], [y], marker="D", s=65,
                               color=COL_REF, zorder=5, linewidths=0.4,
@@ -282,7 +319,7 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
                           color=col, zorder=5, linewidths=0.4,
                           edgecolors="white")
 
-        hr_str = f"{hr:.2f} ({lo:.2f}\u2013{hi:.2f})"
+        hr_str = f"{hr:.2f} ({lo:.2f}–{hi:.2f})"
         p_str  = "< 0.001" if p < 0.001 else f"{p:.3f}"
         txt_col = "#B03000" if sig else COL_TXT
         ax_right.text(0.04, y, hr_str, ha="left", va="center",
@@ -300,7 +337,7 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
     ax_forest.text(0.18, -0.10, "Favours\nrow group",
                    ha="center", va="top", fontsize=7, color=COL_TXT2,
                    transform=ax_forest.transAxes, linespacing=0.9)
-    ax_forest.text(0.82, -0.10, "Favours\nHAIC alone",
+    ax_forest.text(0.82, -0.10, "Favours\nSystemic I+T",
                    ha="center", va="top", fontsize=7, color=COL_TXT2,
                    transform=ax_forest.transAxes, linespacing=0.9)
 
@@ -340,13 +377,13 @@ ax_r = draw_forest_panel(
 leg_handles = [
     mlines.Line2D([], [], color=COL_NS, marker="D", markersize=6,
                   markerfacecolor=COL_NS, markeredgecolor="white",
-                  markeredgewidth=0.4, linewidth=1.6, label="P \u2265 0.05"),
+                  markeredgewidth=0.4, linewidth=1.6, label="P ≥ 0.05"),
     mlines.Line2D([], [], color=COL_SIG, marker="D", markersize=6,
                   markerfacecolor=COL_SIG, markeredgecolor="white",
                   markeredgewidth=0.4, linewidth=1.6, label="P < 0.05"),
     mlines.Line2D([], [], color=COL_REF, marker="D", markersize=6,
                   markerfacecolor=COL_REF, markeredgecolor="white",
-                  markeredgewidth=0.4, linewidth=0, label="Reference (HAIC alone)"),
+                  markeredgewidth=0.4, linewidth=0, label="Reference (Systemic I+T)"),
 ]
 fig.legend(handles=leg_handles, loc="lower center",
            bbox_to_anchor=(0.5, 0.01), ncol=3,
@@ -354,13 +391,13 @@ fig.legend(handles=leg_handles, loc="lower center",
            columnspacing=1.5)
 
 fig.text(0.02, 0.96,
-         "Overall survival: hazard ratio vs HAIC alone (reference)",
+         "HR vs Systemic I+T (does adding HAIC to systemic I+T improve OS?)",
          fontsize=12, fontweight="bold", color=COL_TXT, va="top")
 fig.text(0.02, 0.93,
-         "HR = h(row group) / h(HAIC alone)  |  HR < 1 favours row group",
+         "HR = h(row group) / h(Systemic I+T)  |  HR < 1 favours row group",
          fontsize=8.5, color=COL_TXT2, va="top")
 
-base = os.path.join(OUTPUT_DIR, "HR_forest_vs_HAIC_alone")
+base = os.path.join(OUTPUT_DIR, "HR_forest_vs_systemic_it")
 fig.savefig(f"{base}.pdf", bbox_inches="tight", pad_inches=0.08)
 fig.savefig(f"{base}.png", dpi=300, bbox_inches="tight", pad_inches=0.08)
 plt.close(fig)

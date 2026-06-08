@@ -20,9 +20,12 @@ library(officer)
 library(survival)
 
 BASE_DIR   <- "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
+EIGHT_GROUP <- Sys.getenv("EIGHT_GROUP", "0") == "1"
+SFX <- if (EIGHT_GROUP) "_8group" else ""
+DATA_CSV <- if (EIGHT_GROUP) "analysis_ready_8group.csv" else "analysis_ready.csv"
 DATA_DIR   <- file.path(BASE_DIR, "data")
-TABLE_DIR  <- file.path(BASE_DIR, "results", "tables")
-LOVE_DIR   <- file.path(BASE_DIR, "figures", "loveplots")
+TABLE_DIR  <- file.path(BASE_DIR, "results", paste0("tables", SFX))
+LOVE_DIR   <- file.path(BASE_DIR, "figures", paste0("loveplots", SFX))
 LOG_DIR    <- file.path(BASE_DIR, "logs")
 dir.create(TABLE_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(LOVE_DIR,  showWarnings = FALSE, recursive = TRUE)
@@ -42,9 +45,15 @@ group_colors <- c(
   "HAIC+T_concurrent"     = "#F0E442",
   "HAIC_then_T"           = "#CC79A7",
   "HAIC+I+T_concurrent"   = "#D55E00",
-  "HAIC_then_I+T"         = "#56B4E9"
+  "HAIC_then_I+T"         = "#56B4E9",
+  "Systemic_I+T"          = "#009E73"
 )
-GROUP_ORDER <- names(group_colors)
+GROUP_ORDER <- c(
+  "HAIC_alone", "HAIC+I_concurrent", "HAIC_then_I",
+  "HAIC+T_concurrent", "HAIC_then_T",
+  "HAIC+I+T_concurrent", "HAIC_then_I+T"
+)
+if (EIGHT_GROUP) GROUP_ORDER <- c(GROUP_ORDER, "Systemic_I+T")
 
 # ════════════════════════════════════════════════════════════════════
 # 1. 读取并整合数据
@@ -52,7 +61,7 @@ GROUP_ORDER <- names(group_colors)
 cat("\n1. 读取数据...\n")
 
 analysis_data <- read_csv(
-  file.path(DATA_DIR, "analysis_ready.csv"), show_col_types = FALSE
+  file.path(DATA_DIR, DATA_CSV), show_col_types = FALSE
 ) %>%
   filter(os_months >= 0) %>%
   mutate(
@@ -324,7 +333,8 @@ GROUP_LABELS <- c(
   "HAIC+T_concurrent"   = "HAIC + Targeted therapy (concurrent)",
   "HAIC_then_T"         = "HAIC then Targeted therapy (sequential)",
   "HAIC+I+T_concurrent" = "HAIC + Immunotherapy + Targeted therapy (concurrent)",
-  "HAIC_then_I+T"       = "HAIC then Immunotherapy + Targeted therapy (sequential)"
+  "HAIC_then_I+T"       = "HAIC then Immunotherapy + Targeted therapy (sequential)",
+  "Systemic_I+T"        = "Systemic I+T"
 )
 
 desc_data <- analysis_data %>%

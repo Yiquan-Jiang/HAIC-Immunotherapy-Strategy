@@ -15,15 +15,18 @@ import pandas as pd
 import os
 
 BASE_DIR = "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
-FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km')
-RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_vs_template')
+EIGHT_GROUP = os.environ.get("EIGHT_GROUP", "0") == "1"
+SFX = "_8group" if EIGHT_GROUP else ""
+DATA_CSV = "analysis_ready_8group.csv" if EIGHT_GROUP else "analysis_ready.csv"
+FIG_DIR  = os.path.join(BASE_DIR, 'figures', 'km' + SFX)
+RES_DIR  = os.path.join(BASE_DIR, 'results', 'psm_vs_template' + SFX)
 os.makedirs(FIG_DIR, exist_ok=True)
 
 GROUP_ORDER = [
     'HAIC_alone', 'HAIC+I_concurrent', 'HAIC_then_I',
     'HAIC+T_concurrent', 'HAIC_then_T',
     'HAIC+I+T_concurrent', 'HAIC_then_I+T',
-]
+] + (["Systemic_I+T"] if EIGHT_GROUP else [])
 GROUP_COLORS = {
     'HAIC_alone':            '#0072B2',
     'HAIC+I_concurrent':     '#E69F00',
@@ -32,6 +35,7 @@ GROUP_COLORS = {
     'HAIC_then_T':           '#CC79A7',
     'HAIC+I+T_concurrent':   '#D55E00',
     'HAIC_then_I+T':         '#56B4E9',
+    'Systemic_I+T':          '#117733',
 }
 # 与 step4_km_curves.py（01_km_all_before_psm）图例文案一致
 GROUP_LABELS = {
@@ -42,8 +46,9 @@ GROUP_LABELS = {
     'HAIC_then_T':           'HAIC → Target',
     'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
     'HAIC_then_I+T':         'HAIC → Immuno + Target',
+    'Systemic_I+T':          'Systemic I+T',
 }
-LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1))]
+LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1)), (0, (3, 1, 1, 1, 1, 1))]
 
 plt.rcParams.update({
     'font.family':        'sans-serif',
@@ -167,13 +172,33 @@ ax_km.set_xticks(RISK_TIMES)
 ax_km.yaxis.set_major_locator(mticker.MultipleLocator(0.2))
 ax_km.legend(loc='upper right', handlelength=2.0, fontsize=6.5)
 
-# [M2] 全局 Wald P 值（来自加权 Cox 全模型）
-wald_row = gt_df[gt_df['Test'] == 'Wald_global']
+# [TIER1] 全局检验注记
+# 由于 Schoenfeld 全局 P 严重违背 PH 假设（χ²=870 on 6 df, P<<0.001），
+# Cox Wald 的 HR 解释失效。改以 RMST(τ=36mo) 全局 χ² 作为主要疗效假设检验，
+# 并显式标注 PH 违背状态供读者参考。
+def _fmt_p(p):
+    if pd.isna(p):
+        return 'NA'
+    return 'P < 0.001' if p < 0.001 else f'P = {p:.3f}'
+
+ph_row    = gt_df[gt_df['Test'] == 'PH_global']
+wald_row  = gt_df[gt_df['Test'] == 'Wald_global']
+rmst_row  = gt_df[gt_df['Test'] == 'RMST_global_tau36']
+
+lines = []
+if len(rmst_row) > 0:
+    lines.append(f"RMST (τ=36 mo) global {_fmt_p(float(rmst_row['P_value'].iloc[0]))}")
+if len(ph_row) > 0:
+    ph_p = float(ph_row['P_value'].iloc[0])
+    lines.append(f"PH violated (Schoenfeld {_fmt_p(ph_p)})")
 if len(wald_row) > 0:
-    wald_p = float(wald_row['P_value'].iloc[0])
-    p_fmt = 'P < 0.001' if wald_p < 0.001 else f'P = {wald_p:.3f}'
-    ax_km.text(0.97, 0.05, f'Wald test {p_fmt}', transform=ax_km.transAxes,
-               fontsize=7, va='bottom', ha='right', bbox=STATS_BOX)
+    lines.append(f"Cox Wald {_fmt_p(float(wald_row['P_value'].iloc[0]))}  (HR not interpretable)")
+
+if lines:
+    ax_km.text(0.97, 0.05, '\n'.join(lines),
+               transform=ax_km.transAxes,
+               fontsize=6.8, va='bottom', ha='right',
+               linespacing=1.35, bbox=STATS_BOX)
 
 # 风险表布局与 01_km_all_before_psm 的 draw_km 一致
 ax_risk.set_xlim(0, XLIM + 0.5)
