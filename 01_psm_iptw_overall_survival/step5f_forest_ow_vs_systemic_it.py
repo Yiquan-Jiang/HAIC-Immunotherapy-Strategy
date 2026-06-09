@@ -36,11 +36,11 @@ GROUP_LABELS = {
     "Systemic_I+T": "Systemic I+T",
     "HAIC_alone": "HAIC alone",
     "HAIC+I_concurrent": "HAIC + I (concurrent)",
-    "HAIC_then_I": "HAIC → I (sequential)",
+    "HAIC_then_I": "HAIC → I (deferred)",
     "HAIC+T_concurrent": "HAIC + T (concurrent)",
-    "HAIC_then_T": "HAIC → T (sequential)",
+    "HAIC_then_T": "HAIC → T (deferred)",
     "HAIC+I+T_concurrent": "HAIC + I + T (concurrent)",
-    "HAIC_then_I+T": "HAIC → I + T (sequential)",
+    "HAIC_then_I+T": "HAIC → I + T (deferred)",
 }
 
 plt.rcParams.update({
@@ -83,9 +83,12 @@ for g in GROUP_ORDER:
 smd_min, smd_max = fd["max_smd_adj"].min(), fd["max_smd_adj"].max()
 
 
+N_REF = int(fd["n_sys"].iloc[0])   # Systemic I+T n (constant = 570 across all contrasts)
+
+
 def build_plot_rows(data_rows):
     rows = [dict(group=REF_GROUP, label=GROUP_LABELS[REF_GROUP], HR=1.0, CI_lower=np.nan,
-                 CI_upper=np.nan, P_value=np.nan, N=np.nan, is_ref=True)]
+                 CI_upper=np.nan, P_value=np.nan, N=N_REF, is_ref=True)]
     rows.extend(data_rows)
     return rows
 
@@ -141,7 +144,7 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
             label_style["color"] = COL_REF
         ax_left.text(0.04, y, rp["label"], ha="left", **label_style)
         if is_ref:
-            ax_left.text(0.92, y, "—", ha="center", va="center", fontsize=8.5,
+            ax_left.text(0.92, y, f"{int(rp['N'])}", ha="center", va="center", fontsize=8.5,
                          color=COL_REF, fontweight="bold")
             ax_right.text(0.04, y, "1.00 (reference)", ha="left", va="center",
                           fontsize=8.5, color=COL_REF, fontweight="bold")
