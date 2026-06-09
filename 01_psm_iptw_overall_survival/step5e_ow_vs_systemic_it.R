@@ -72,7 +72,7 @@ var_labels <- c(afp_cat = "AFP category", pivka_log = "log PIVKA-II",
   tumor_max_diameter_cm = "Max tumor diameter", nlr = "NLR")
 
 ess <- function(w) sum(w)^2 / sum(w^2)
-forest_rows <- list(); bal_rows <- list(); km_rows <- list()
+forest_rows <- list(); bal_rows <- list(); km_rows <- list(); wt_rows <- list()
 
 for (g in HAIC_GROUPS) {
   d <- prep %>% filter(main_group %in% c(REF, g)) %>%
@@ -81,6 +81,8 @@ for (g in HAIC_GROUPS) {
 
   W <- weightit(ow_formula, data = d, method = "glm", estimand = "ATO")
   d$ow <- W$weights
+  wt_rows[[g]] <- d %>% transmute(group = g, patient_id, main_group, treat,
+                                  os_months, death, ow)
 
   bt <- bal.tab(W, un = TRUE, stats = "mean.diffs", binary = "std", continuous = "std")$Balance
   bt$covariate <- rownames(bt)
@@ -126,6 +128,7 @@ forest_df <- bind_rows(forest_rows)
 write_csv(forest_df, file.path(OUT_DIR, "ow_forest_data.csv"))
 write_csv(bind_rows(bal_rows), file.path(OUT_DIR, "ow_balance_long.csv"))
 write_csv(bind_rows(km_rows),  file.path(OUT_DIR, "ow_km_data.csv"))
+write_csv(bind_rows(wt_rows),  file.path(OUT_DIR, "ow_weights.csv"))
 
 cat(sprintf("\nAll contrasts balanced: max post-OW |SMD| across 7 contrasts = %.3f\n",
             max(forest_df$max_smd_adj)))
