@@ -4,7 +4,7 @@
 
 > *Immunotherapy Following Induction Arterial Chemotherapy for Unresectable Hepatocellular Carcinoma: A Biomarker-Guided Strategy*
 
-A causal-inference framework that compares **seven first-line treatment strategies** in 3,885 patients with unresectable HCC treated with induction FOLFOX-HAIC, and develops a **biomarker-guided on-demand decision rule** for adding immunotherapy / antiangiogenic therapy (validated in two parallel **target-trial emulations**).
+A causal-inference framework that compares **eight first-line treatment strategies** — seven induction-FOLFOX-HAIC strategies plus a systemic-therapy-only comparator — in **4,455 patients** with unresectable HCC, and develops a **biomarker-guided on-demand decision rule** for adding immunotherapy / antiangiogenic therapy to HAIC (validated in two parallel **target-trial emulations**).
 
 ---
 
@@ -17,7 +17,11 @@ A causal-inference framework that compares **seven first-line treatment strategi
 
 ---
 
-## Seven treatment groups
+## Eight treatment groups
+
+Groups 1–7 are the induction-FOLFOX-HAIC strategies (the core cohort, N = 3,885);
+group 8 is a systemic-therapy-only comparator without induction HAIC (N = 570),
+added as an external benchmark for the overall-survival analysis (Stage 1).
 
 | ID | Group label                | Description                                  |
 | -- | -------------------------- | -------------------------------------------- |
@@ -28,6 +32,7 @@ A causal-inference framework that compares **seven first-line treatment strategi
 | 5  | `HAIC → Anti-angio`        | Delayed sequential antiangiogenic            |
 | 6  | `HAIC + ICI + Anti-angio` (triplet) | All three concurrently              |
 | 7  | `HAIC → ICI + Anti-angio`  | Delayed sequential triplet                   |
+| 8  | `Systemic I+T` (no HAIC)   | Systemic immunotherapy + antiangiogenic, **no** induction HAIC (external comparator, N = 570) |
 
 ---
 
@@ -35,7 +40,8 @@ A causal-inference framework that compares **seven first-line treatment strategi
 
 ```
 Stage 1  Confounder-adjusted comparisons
-         IPTW (CBPS) + 21 pairwise PSM + Overlap Weighting
+         IPTW (CBPS) + 28 pairwise PSM + Overlap Weighting
+         (incl. each strategy vs the systemic-only comparator)
                        │
                        ▼
 Stage 2  Biomarker × treatment interaction
@@ -52,17 +58,24 @@ Stage 3  Target Trial Emulation (CCW + IPCW)
 
 ```
 HAIC-Immunotherapy-Strategy/
-├── 00_data_preparation/                   ← Build analysis-ready dataset (7 groups)
-│   └── step0_prepare_data.py
+├── 00_data_preparation/                   ← Build analysis-ready dataset (8 groups)
+│   ├── step0_prepare_data.py                 classify the 7 HAIC strategies → analysis_ready.csv
+│   └── 00b_prepare_systemic_it_group.py      add the systemic-only 8th group (MICE) → analysis_ready_8group.csv
 │
-├── 01_psm_iptw_overall_survival/          ← Stage 1
-│   ├── step3_psm_analysis.R                  one-to-one nearest-neighbor PSM
-│   ├── step3b_psm_vs_template.R              standardized PSM vs template
+├── 01_psm_iptw_overall_survival/          ← Stage 1  (set EIGHT_GROUP=1 to add the systemic-only comparator)
+│   ├── step3_psm_analysis.R                  1:1 nearest-neighbor PSM (28 pairwise in 8-group mode)
+│   ├── step3b_psm_vs_template.R              CBPS-IPTW vs standardized template
 │   ├── step4_km_curves.py                    KM curves (overall, unweighted / IPTW)
 │   ├── step4b_km_template_matched.py         KM curves of PSM-matched pairs
+│   ├── step4c_rmst_landmark.py               RMST + landmark analyses
 │   ├── step5_forest_plot.py                  HR / RMST forest summary
-│   ├── step5b_forest_vs_IT_concurrent.py     vs HAIC + ICI concurrent
-│   ├── step5c_forest_vs_HAIC_alone.py        vs HAIC alone (21 pairwise)
+│   ├── step5b_forest_vs_IT_concurrent.py     vs HAIC + ICI + Anti-angio concurrent
+│   ├── step5c_forest_vs_HAIC_alone.py        vs HAIC alone (pairwise)
+│   ├── step5d_forest_vs_systemic_it.py       vs systemic-only comparator (joint IPTW)
+│   ├── step5e_ow_pairwise.R                  pairwise overlap weighting (ATO); OW_REF picks the reference arm
+│   ├── step5f_forest_ow.py                   OW forest (default vs HAIC alone, rows HR-sorted)
+│   ├── step5g_km_ow_vs_systemic_it.py        OW-weighted KM vs systemic comparator
+│   ├── step5h_baseline_tables_ow.R           OW before/after balance tables
 │   └── step6_tables_and_loveplots.R          baseline tables + love plots (balance)
 │
 ├── 02_subgroup_overlap_weighting/         ← Subgroup analysis (overlap weighting)
@@ -73,7 +86,7 @@ HAIC-Immunotherapy-Strategy/
 │   └── step7_subgroup_plots.py               Subgroup forest panels
 │
 ├── 03_swimmer_plot/                       ← Per-patient timelines
-│   ├── swimmer_plot_7groups.R                Swimmer plots for the 7 groups
+│   ├── swimmer_plot_7groups.R                Swimmer plots for the 7 HAIC strategies (systemic-only arm has no HAIC timeline)
 │   └── plot_haic_then_i_to_target_interval.R HAIC → ICI interval / target-window adherence
 │
 ├── 04_biomarker_dynamics/                 ← Longitudinal AFP/PIVKA-II/inflammatory indices
@@ -145,14 +158,21 @@ install.packages(c(
 
 ```bash
 # Stage 0: prepare analysis-ready dataset (requires raw inputs)
-python  00_data_preparation/step0_prepare_data.py
+python  00_data_preparation/step0_prepare_data.py                       # 7 HAIC groups → analysis_ready.csv
+python  00_data_preparation/00b_prepare_systemic_it_group.py            # + systemic-only 8th group → analysis_ready_8group.csv
 
 # Stage 1: PSM / IPTW + KM + tables
-Rscript 01_psm_iptw_overall_survival/step3_psm_analysis.R
-python  01_psm_iptw_overall_survival/step4_km_curves.py
+# 7-group analysis is the default; prefix EIGHT_GROUP=1 to add the systemic-only comparator
+# (reads analysis_ready_8group.csv, writes to *_8group/ output dirs).
+EIGHT_GROUP=1 Rscript 01_psm_iptw_overall_survival/step3_psm_analysis.R
+EIGHT_GROUP=1 python  01_psm_iptw_overall_survival/step4_km_curves.py
 python  01_psm_iptw_overall_survival/step4b_km_template_matched.py
-python  01_psm_iptw_overall_survival/step5_forest_plot.py
-Rscript 01_psm_iptw_overall_survival/step6_tables_and_loveplots.R
+EIGHT_GROUP=1 python  01_psm_iptw_overall_survival/step5_forest_plot.py
+EIGHT_GROUP=1 Rscript 01_psm_iptw_overall_survival/step6_tables_and_loveplots.R
+
+# Systemic-only comparator: pairwise overlap weighting (ATO). OW_REF picks the reference arm.
+Rscript 01_psm_iptw_overall_survival/step5e_ow_pairwise.R               # default reference: HAIC alone
+python  01_psm_iptw_overall_survival/step5f_forest_ow.py               # OW forest, rows HR-sorted
 
 # Subgroup analysis with overlap weighting
 Rscript 02_subgroup_overlap_weighting/step7_ow_balance_table.R
@@ -219,8 +239,9 @@ python  07_target_trial_emulation/tte_IT_R_figures_two_cohorts.py
 | `HAIC_NO_TACE_4_TIDY_baseline.csv`         | Baseline characteristics (no TACE patients)   |
 | `HAIC_NO_TACE_4_TIDY_baseline_imputed.csv` | Imputed baseline                              |
 | `HAIC_NO_TACE_4_TIDY_longitudinal.csv`     | Per-cycle longitudinal labs                   |
-| `analysis_ready.csv`                       | 7-group classified analytic dataset           |
-| `matched_ids_*.csv`                        | Pre-computed PSM matched IDs (6 pairs)        |
+| `analysis_ready.csv`                       | 7-group HAIC analytic dataset (N = 3,885)     |
+| `analysis_ready_8group.csv`                | adds the systemic-only 8th group (N = 4,455; built by `00b`) |
+| `matched_ids_*.csv`                        | Pre-computed pairwise PSM matched IDs         |
 
 ---
 

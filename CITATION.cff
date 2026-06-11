@@ -22,6 +22,7 @@ keywords:
   - clone-censor-weight
   - propensity score matching
   - overlap weighting
+  - systemic therapy comparator
   - restricted cubic spline
 preferred-citation:
   type: article

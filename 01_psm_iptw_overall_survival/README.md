@@ -1,26 +1,45 @@
 # 01 — Stage 1: PSM / IPTW overall survival
 
-Confounder-adjusted overall-survival comparisons across the seven treatment
-groups, including all 21 pairwise propensity-score matched (PSM) comparisons
-and CBPS-based inverse-probability-of-treatment weighting (IPTW).
+Confounder-adjusted overall-survival comparisons across the treatment groups,
+via pairwise propensity-score matching (PSM) and CBPS-based
+inverse-probability-of-treatment weighting (IPTW).
+
+The core analysis covers the **seven HAIC strategies** (21 pairwise PSM
+comparisons). Setting the environment variable **`EIGHT_GROUP=1`** adds the
+**systemic-therapy-only comparator** (8th group): the scripts then read
+`analysis_ready_8group.csv`, run all **28 pairwise** comparisons, and write to
+`*_8group/` output directories (the 7-group outputs are left untouched).
+
+Because the no-HAIC arm sits in a low-density propensity region (its joint
+8-group IPTW shows inadequate overlap — effective sample size ≈ 32 %), the
+preferred comparison against it uses **focused pairwise overlap weighting (ATO)**
+rather than joint IPTW (`step5e`–`step5h`).
 
 ## Workflow
 
 ```
-analysis_ready.csv
+analysis_ready.csv  /  analysis_ready_8group.csv  (EIGHT_GROUP=1)
       │
       ▼
-step3_psm_analysis.R         ── 1:1 nearest-neighbor PSM (caliper = 0.2 SD)
-step3b_psm_vs_template.R     ── PSM vs standardized template
+step3_psm_analysis.R         ── 1:1 nearest-neighbor PSM (caliper = 0.2 SD; 21 or 28 pairs)
+step3b_psm_vs_template.R     ── CBPS-IPTW vs standardized template
       │
       ▼
 step4_km_curves.py           ── KM curves (overall, unweighted / IPTW)
 step4b_km_template_matched.py── KM curves of PSM-matched pairs
+step4c_rmst_landmark.py      ── RMST + landmark analyses
       │
       ▼
 step5_forest_plot.py         ── HR / RMST forest summary
-step5b_forest_vs_IT_concurrent.py
-step5c_forest_vs_HAIC_alone.py
+step5b_forest_vs_IT_concurrent.py   ── vs HAIC + ICI + Anti-angio concurrent
+step5c_forest_vs_HAIC_alone.py      ── vs HAIC alone
+      │
+      ▼   (systemic-only comparator — 8-group only)
+step5d_forest_vs_systemic_it.py     ── vs systemic-only, joint CBPS-IPTW
+step5e_ow_pairwise.R                ── pairwise overlap weighting (ATO); OW_REF picks the reference arm
+step5f_forest_ow.py                 ── OW forest (default vs HAIC alone, rows HR-sorted)
+step5g_km_ow_vs_systemic_it.py      ── OW-weighted KM vs systemic-only
+step5h_baseline_tables_ow.R         ── OW before/after baseline balance tables
       │
       ▼
 step6_tables_and_loveplots.R ── Baseline / balance tables + love plots
@@ -34,11 +53,14 @@ step6_tables_and_loveplots.R ── Baseline / balance tables + love plots
 | Pre/post-PSM balance tables           | `step3_psm_analysis.R` + `step6_tables_and_loveplots.R` |
 | KM curves (overall, unweighted/IPTW)  | `step4_km_curves.py`                  |
 | KM curves (PSM-matched pairs)         | `step4b_km_template_matched.py`       |
+| RMST / landmark estimates             | `step4c_rmst_landmark.py`             |
 | HR / RMST forest panels               | `step5_*` family                      |
+| Overlap-weighted (ATO) vs systemic-only forest / KM / balance | `step5e`–`step5h` |
 | Love plots (SMD before/after)         | `step6_tables_and_loveplots.R`        |
 
 ## Statistical notes
 
 - **PSM**: 1:1 nearest-neighbor without replacement, caliper 0.2 SD of the logit propensity score, balance assessed by absolute standardized mean difference (|SMD| < 0.1).
 - **IPTW**: covariate-balancing propensity score (CBPS) with stabilized weights, trimmed at the 1st/99th percentiles for sensitivity analyses.
+- **Overlap weighting (ATO)**: focused pairwise weighting (`e(1-e)`) used for contrasts against the systemic-only comparator, which the joint 8-group IPTW cannot balance adequately. `step5e` writes to `ow_vs_<reference>_8group/`; set `OW_REF=Systemic_I+T` to reproduce the vs-systemic track instead of the default vs-HAIC-alone.
 - **Cox**: weighted Cox regression with robust sandwich standard errors. Proportional-hazards assumption checked by Schoenfeld residuals.
