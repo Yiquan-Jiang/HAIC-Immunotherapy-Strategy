@@ -1,22 +1,26 @@
 #!/usr/bin/env Rscript
 # -*- coding: utf-8 -*-
 #
-# step5e — Overlap Weighting (ATO) of each HAIC strategy vs Systemic I+T
+# step5e — Overlap Weighting (ATO) of each group vs a reference arm
 # =====================================================================
-# Fixes the inadequate overlap of the no-HAIC arm under the joint 8-group IPTW
-# (Systemic_I+T ESS 182/570, residual |SMD|>0.1 on tbil/alb/age). For EACH of the 7
-# HAIC groups we run a FOCUSED binary overlap-weighting (ATO) contrast vs Systemic I+T:
+# Focused pairwise overlap-weighting (ATO): for EACH non-reference group we run a binary
+# OW contrast against the reference arm REF. Default REF = HAIC_alone, so the 7 rows are
+# the 6 other HAIC strategies + Systemic_I+T, each weighted against HAIC alone.
+# (Set OW_REF=Systemic_I+T to reproduce the original vs-Systemic track, which fixes the
+#  no-HAIC arm's inadequate overlap under the joint 8-group IPTW — ESS 182/570.)
 #   - exact mean balance on the PS-model covariates (overlap/equipoise population)
-#   - varices DROPPED (uniformly 'No' in the Systemic source -> artifactual imbalance)
-#   - weighted Cox HR (HAIC group vs Systemic I+T; HR<1 = HAIC better)
+#   - varices DROPPED (uniformly 'No' in the Systemic source -> artifactual imbalance;
+#     kept dropped for ALL contrasts so one PS model is shared across the forest)
+#   - weighted Cox HR (row group vs REF; HR<1 = row group better than REF)
 #   - per-contrast love plot + balance summary + ESS
 # Estimand: ATO (average treatment effect in the overlap population).
 #
-# Outputs (results/ow_vs_systemic_it_8group/):
+# Outputs (results/ow_vs_<refkey>_8group/, e.g. ow_vs_haic_alone_8group/):
 #   ow_forest_data.csv        7 rows: HR/CI/p, ESS, max|SMD| pre/post
+#                             (n_haic/ess_haic = row-group n/ESS; n_sys/ess_sys = REF n/ESS)
 #   ow_balance_long.csv       per-covariate SMD (unadj/adj) for every contrast
 #   ow_km_data.csv            ATO-weighted KM curve data per contrast (for plotting)
-# Love plots (figures/ow_vs_systemic_it_8group/): love_<group>.png
+# Love plots (figures/ow_vs_<refkey>_8group/): love_<group>.png
 
 suppressMessages({
   library(dplyr); library(readr); library(WeightIt); library(cobalt)
@@ -25,14 +29,32 @@ suppressMessages({
 
 BASE_DIR <- "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
 DATA_DIR <- file.path(BASE_DIR, "data")
-OUT_DIR  <- file.path(BASE_DIR, "results", "ow_vs_systemic_it_8group")
-FIG_DIR  <- file.path(BASE_DIR, "figures", "ow_vs_systemic_it_8group")
+
+# ── Reference arm (the comparator each row group is weighted against) ───────
+# Default HAIC_alone; set OW_REF=Systemic_I+T to reproduce the original vs-Systemic track.
+REF <- Sys.getenv("OW_REF", "HAIC_alone")
+
+ALL_GROUPS <- c("HAIC_alone", "HAIC+I_concurrent", "HAIC_then_I", "HAIC+T_concurrent",
+                "HAIC_then_T", "HAIC+I+T_concurrent", "HAIC_then_I+T", "Systemic_I+T")
+ROW_GROUPS <- setdiff(ALL_GROUPS, REF)   # every other group, contrasted against REF
+
+group_label <- c(
+  "HAIC_alone" = "HAIC alone", "HAIC+I_concurrent" = "HAIC + I (concurrent)",
+  "HAIC_then_I" = "HAIC -> I (deferred)", "HAIC+T_concurrent" = "HAIC + T (concurrent)",
+  "HAIC_then_T" = "HAIC -> T (deferred)", "HAIC+I+T_concurrent" = "HAIC + I + T (concurrent)",
+  "HAIC_then_I+T" = "HAIC -> I + T (deferred)", "Systemic_I+T" = "Systemic I+T")
+REF_LABEL <- group_label[[REF]]
+
+ref_key <- function(x) {
+  if (x == "Systemic_I+T") "systemic_it"
+  else if (x == "HAIC_alone") "haic_alone"
+  else gsub("[^A-Za-z0-9]+", "_", tolower(x))
+}
+OUT_DIR  <- file.path(BASE_DIR, "results", paste0("ow_vs_", ref_key(REF), "_8group"))
+FIG_DIR  <- file.path(BASE_DIR, "figures", paste0("ow_vs_", ref_key(REF), "_8group"))
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(FIG_DIR, showWarnings = FALSE, recursive = TRUE)
-
-REF <- "Systemic_I+T"
-HAIC_GROUPS <- c("HAIC_alone", "HAIC+I_concurrent", "HAIC_then_I", "HAIC+T_concurrent",
-                 "HAIC_then_T", "HAIC+I+T_concurrent", "HAIC_then_I+T")
+cat(sprintf("Reference arm: %s  ->  %s\n", REF, OUT_DIR))
 
 raw <- read_csv(file.path(DATA_DIR, "analysis_ready_8group.csv"), show_col_types = FALSE)
 
@@ -74,9 +96,9 @@ var_labels <- c(afp_cat = "AFP category", pivka_log = "log PIVKA-II",
 ess <- function(w) sum(w)^2 / sum(w^2)
 forest_rows <- list(); bal_rows <- list(); km_rows <- list(); wt_rows <- list()
 
-for (g in HAIC_GROUPS) {
+for (g in ROW_GROUPS) {
   d <- prep %>% filter(main_group %in% c(REF, g)) %>%
-    mutate(treat = if_else(main_group == g, 1L, 0L))   # 1 = HAIC group, 0 = Systemic I+T
+    mutate(treat = if_else(main_group == g, 1L, 0L))   # 1 = row group, 0 = reference (REF)
   d <- d %>% filter(if_all(all_of(COVS), ~ !is.na(.)))
 
   W <- weightit(ow_formula, data = d, method = "glm", estimand = "ATO")
@@ -92,18 +114,19 @@ for (g in HAIC_GROUPS) {
   # love plot
   lp <- love.plot(W, stats = "mean.diffs", binary = "std", abs = TRUE,
                   thresholds = c(m = 0.1), var.names = var_labels,
-                  title = sprintf("%s vs Systemic I+T (ATO)", g),
+                  title = sprintf("%s vs %s (ATO)", group_label[[g]], REF_LABEL),
                   sample.names = c("Unweighted", "Overlap-weighted")) +
         theme(legend.position = "bottom")
   ggsave(file.path(FIG_DIR, sprintf("love_%s.png", gsub("[^A-Za-z0-9]+","_", g))),
          lp, width = 7, height = 5.2, dpi = 300)
 
-  # weighted Cox: HR of HAIC group vs Systemic I+T (ref)
+  # weighted Cox: HR of row group vs REF (reference)
   cox <- coxph(Surv(os_months, death) ~ treat, data = d, weights = ow, robust = TRUE)
   sm <- summary(cox)
   hr <- sm$conf.int[1, "exp(coef)"]; lo <- sm$conf.int[1, "lower .95"]
   hi <- sm$conf.int[1, "upper .95"]; pv <- sm$coefficients[1, "Pr(>|z|)"]
 
+  # NOTE column names kept for backward compat: n_haic/ess_haic = ROW-group, n_sys/ess_sys = REF
   forest_rows[[g]] <- data.frame(
     group = g, n_haic = sum(d$treat == 1), n_sys = sum(d$treat == 0),
     ess_haic = round(ess(d$ow[d$treat == 1])), ess_sys = round(ess(d$ow[d$treat == 0])),
@@ -119,8 +142,8 @@ for (g in HAIC_GROUPS) {
       group = g, arm = if_else(tr == 1L, g, REF),
       time = fit$time, surv = fit$surv, n_risk = fit$n.risk)
   }
-  cat(sprintf("%-22s vs Sys | ESS_sys=%d/%d  max|SMD| %.3f->%.3f  HR=%.2f (%.2f-%.2f) p=%.3g\n",
-              g, forest_rows[[g]]$ess_sys, forest_rows[[g]]$n_sys,
+  cat(sprintf("%-22s vs %-12s | ESS_ref=%d/%d  max|SMD| %.3f->%.3f  HR=%.2f (%.2f-%.2f) p=%.3g\n",
+              g, REF, forest_rows[[g]]$ess_sys, forest_rows[[g]]$n_sys,
               forest_rows[[g]]$max_smd_unadj, forest_rows[[g]]$max_smd_adj, hr, lo, hi, pv))
 }
 

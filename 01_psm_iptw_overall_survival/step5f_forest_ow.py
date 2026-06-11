@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Publication-quality forest plot: each HAIC strategy vs Systemic I+T (reference).
+Publication-quality forest plot: each group vs HAIC alone (reference).
 Two panels side by side: Left = Before weighting (unadjusted Cox), Right = After overlap
-weighting (ATO). HR = h(HAIC strategy) / h(Systemic I+T). HR < 1 -> HAIC prolongs OS.
-Same Nature/Cell table-style layout as step5c_forest_vs_HAIC_alone.py.
+weighting (ATO). HR = h(row group) / h(HAIC alone). HR < 1 -> row group prolongs OS.
+Rows (incl. Systemic I+T) are ordered by ascending after-OW HR. Same Nature/Cell
+table-style layout as step5c_forest_vs_HAIC_alone.py.
 
 Each row is a SEPARATE focused pairwise overlap-weighting (ATO) model (varices dropped),
-so the no-HAIC arm is balanced per contrast (max|SMD| <=0.15) instead of via the joint
-8-group IPTW (which left it at |SMD| 0.335). After-OW HR/CI/p come from the R analysis
-(step5e: ow_forest_data.csv); the Before column is the unadjusted Cox on the same pairwise
-complete-case set (ow_weights.csv).
+so each contrast is balanced per pair. After-OW HR/CI/p come from the R analysis
+(step5e with OW_REF=HAIC_alone: ow_vs_haic_alone_8group/ow_forest_data.csv); the Before
+column is the unadjusted Cox on the same pairwise complete-case set (ow_weights.csv).
 """
 import matplotlib
 matplotlib.use('Agg')
@@ -25,13 +25,14 @@ BASE_DIR = (
     "/Users/yqj/Nutstore Files/我的坚果云/Liver_tumor_big_data/"
     "FIRST_LINE_HAIC_2025-12-30/HAIC_NO_TACE_4_TIDY/update_group_7"
 )
-RES_DIR = os.path.join(BASE_DIR, "results", "ow_vs_systemic_it_8group")
-OUTPUT_DIR = os.path.join(BASE_DIR, "figures", "ow_vs_systemic_it_8group")
+RES_DIR = os.path.join(BASE_DIR, "results", "ow_vs_haic_alone_8group")
+OUTPUT_DIR = os.path.join(BASE_DIR, "figures", "ow_vs_haic_alone_8group")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-REF_GROUP = "Systemic_I+T"
-GROUP_ORDER = ["HAIC_alone", "HAIC+I_concurrent", "HAIC_then_I", "HAIC+T_concurrent",
-               "HAIC_then_T", "HAIC+I+T_concurrent", "HAIC_then_I+T"]
+REF_GROUP = "HAIC_alone"
+# Row groups (everything except the reference); final row order is set by ascending OW HR below.
+GROUP_ORDER = ["HAIC+I_concurrent", "HAIC_then_I", "HAIC+T_concurrent", "HAIC_then_T",
+               "HAIC+I+T_concurrent", "HAIC_then_I+T", "Systemic_I+T"]
 GROUP_LABELS = {
     "Systemic_I+T": "Systemic I+T",
     "HAIC_alone": "HAIC alone",
@@ -82,8 +83,14 @@ for g in GROUP_ORDER:
                            P_value=float(r["p"]), N=int(r["n_haic"]), is_ref=False))
 smd_min, smd_max = fd["max_smd_adj"].min(), fd["max_smd_adj"].max()
 
+# Order rows by ascending after-OW HR; apply the same order to both panels for alignment.
+hr_order = [r["group"] for r in sorted(after_rows, key=lambda r: r["HR"])]
+after_rows.sort(key=lambda r: r["HR"])
+_before_by_group = {r["group"]: r for r in before_rows}
+before_rows = [_before_by_group[g] for g in hr_order]
 
-N_REF = int(fd["n_sys"].iloc[0])   # Systemic I+T n (constant = 570 across all contrasts)
+
+N_REF = int(fd["n_sys"].iloc[0])   # HAIC alone n (constant across all pairwise contrasts)
 
 
 def build_plot_rows(data_rows):
@@ -178,9 +185,9 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
     ax_forest.set_xticks(xticks)
     ax_forest.set_xticklabels([str(x) for x in xticks], fontsize=8)
     ax_forest.set_xlabel("Hazard ratio", fontsize=9.5, labelpad=10)
-    ax_forest.text(0.18, -0.10, "Favours\nHAIC strategy", ha="center", va="top",
+    ax_forest.text(0.18, -0.10, "Favours\nrow group", ha="center", va="top",
                    fontsize=7, color=COL_TXT2, transform=ax_forest.transAxes, linespacing=0.9)
-    ax_forest.text(0.82, -0.10, "Favours\nSystemic I+T", ha="center", va="top",
+    ax_forest.text(0.82, -0.10, "Favours\nHAIC alone", ha="center", va="top",
                    fontsize=7, color=COL_TXT2, transform=ax_forest.transAxes, linespacing=0.9)
     ax_forest.set_title(panel_title, fontsize=11, fontweight="bold", loc="center", pad=18)
     ax_forest.text(0.5, 1.06, subtitle, fontsize=7.5, color=COL_TXT2, ha="center",
@@ -211,18 +218,18 @@ leg_handles = [
                   markeredgecolor="white", markeredgewidth=0.4, linewidth=1.6, label="P < 0.05"),
     mlines.Line2D([], [], color=COL_REF, marker="D", markersize=6, markerfacecolor=COL_REF,
                   markeredgecolor="white", markeredgewidth=0.4, linewidth=0,
-                  label="Reference (Systemic I+T)"),
+                  label="Reference (HAIC alone)"),
 ]
 fig.legend(handles=leg_handles, loc="lower center", bbox_to_anchor=(0.5, 0.01), ncol=3,
            fontsize=8.5, frameon=False, handlelength=1.8, columnspacing=1.5)
-fig.text(0.02, 0.985, "Overall survival: hazard ratio vs Systemic I+T (reference)",
+fig.text(0.02, 0.985, "Overall survival: hazard ratio vs HAIC alone (reference)",
          fontsize=12, fontweight="bold", color=COL_TXT, va="top")
 fig.text(0.02, 0.955,
-         "HR = h(HAIC strategy) / h(Systemic I+T)  |  HR < 1 favours the HAIC strategy  "
-         "|  estimand: ATO (overlap population)",
+         "HR = h(row group) / h(HAIC alone)  |  HR < 1 favours the row group  "
+         "|  rows ordered by ascending OW HR  |  estimand: ATO (overlap population)",
          fontsize=8.5, color=COL_TXT2, va="top")
 
-base = os.path.join(OUTPUT_DIR, "HR_forest_ow_vs_systemic_it")
+base = os.path.join(OUTPUT_DIR, "HR_forest_ow_vs_haic_alone")
 fig.savefig(f"{base}.pdf", bbox_inches="tight", pad_inches=0.08)
 fig.savefig(f"{base}.png", dpi=300, bbox_inches="tight", pad_inches=0.08)
 plt.close(fig)
