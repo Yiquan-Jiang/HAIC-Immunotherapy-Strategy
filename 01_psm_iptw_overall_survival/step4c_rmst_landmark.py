@@ -51,11 +51,11 @@ GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
     'HAIC+I_concurrent':     'HAIC + Immuno (concurrent)',
     'HAIC_then_I':           'HAIC → Immuno',
-    'HAIC+T_concurrent':     'HAIC + Target (concurrent)',
-    'HAIC_then_T':           'HAIC → Target',
-    'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
-    'HAIC_then_I+T':         'HAIC → Immuno + Target',
-    'Systemic_I+T':          'Systemic I+T',
+    'HAIC+T_concurrent':     'HAIC + Antiangiogenic (concurrent)',
+    'HAIC_then_T':           'HAIC → Antiangiogenic',
+    'HAIC+I+T_concurrent':   'HAIC + Immuno + Antiangiogenic',
+    'HAIC_then_I+T':         'HAIC → Immuno + Antiangiogenic',
+    'Systemic_I+T':          'Systemic Immuno + Antiangiogenic',
 }
 
 plt.rcParams.update({
@@ -122,7 +122,7 @@ y_pos = np.arange(len(non_ref_groups))[::-1]   # 顶部 = HAIC+I_concurrent
 n_panels = len(available_taus)
 
 # 布局: 紧凑型 — 左侧 1 列 group label + 每个 τ 给 (forest, table) 两个子列
-LABEL_W   = 1.7
+LABEL_W   = 2.5
 FOREST_W  = 1.3
 TABLE_W   = 2.0
 fig_w     = LABEL_W + n_panels * (FOREST_W + TABLE_W)

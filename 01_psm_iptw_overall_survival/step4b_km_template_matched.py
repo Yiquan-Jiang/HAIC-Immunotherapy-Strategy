@@ -42,11 +42,11 @@ GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
     'HAIC+I_concurrent':     'HAIC + Immuno (concurrent)',
     'HAIC_then_I':           'HAIC → Immuno',
-    'HAIC+T_concurrent':     'HAIC + Target (concurrent)',
-    'HAIC_then_T':           'HAIC → Target',
-    'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
-    'HAIC_then_I+T':         'HAIC → Immuno + Target',
-    'Systemic_I+T':          'Systemic I+T',
+    'HAIC+T_concurrent':     'HAIC + Antiangiogenic (concurrent)',
+    'HAIC_then_T':           'HAIC → Antiangiogenic',
+    'HAIC+I+T_concurrent':   'HAIC + Immuno + Antiangiogenic',
+    'HAIC_then_I+T':         'HAIC → Immuno + Antiangiogenic',
+    'Systemic_I+T':          'Systemic Immuno + Antiangiogenic',
 }
 LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1)), (0, (3, 1, 1, 1, 1, 1))]
 

@@ -34,14 +34,14 @@ REF_GROUP = "HAIC_alone"
 GROUP_ORDER = ["HAIC+I_concurrent", "HAIC_then_I", "HAIC+T_concurrent", "HAIC_then_T",
                "HAIC+I+T_concurrent", "HAIC_then_I+T", "Systemic_I+T"]
 GROUP_LABELS = {
-    "Systemic_I+T": "Systemic I+T",
+    "Systemic_I+T": "Systemic Immuno + Antiangiogenic",
     "HAIC_alone": "HAIC alone",
-    "HAIC+I_concurrent": "HAIC + I (concurrent)",
-    "HAIC_then_I": "HAIC → I (deferred)",
-    "HAIC+T_concurrent": "HAIC + T (concurrent)",
-    "HAIC_then_T": "HAIC → T (deferred)",
-    "HAIC+I+T_concurrent": "HAIC + I + T (concurrent)",
-    "HAIC_then_I+T": "HAIC → I + T (deferred)",
+    "HAIC+I_concurrent": "HAIC + Immuno (concurrent)",
+    "HAIC_then_I": "HAIC → Immuno",
+    "HAIC+T_concurrent": "HAIC + Antiangiogenic (concurrent)",
+    "HAIC_then_T": "HAIC → Antiangiogenic",
+    "HAIC+I+T_concurrent": "HAIC + Immuno + Antiangiogenic",
+    "HAIC_then_I+T": "HAIC → Immuno + Antiangiogenic",
 }
 
 plt.rcParams.update({
@@ -102,7 +102,7 @@ def build_plot_rows(data_rows):
 
 def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
     n = len(rows)
-    left_frac, mid_frac, right_frac = 0.40, 0.28, 0.32
+    left_frac, mid_frac, right_frac = 0.44, 0.24, 0.32
     ax_left = fig.add_axes([rect[0], rect[1], rect[2] * left_frac, rect[3]])
     ax_forest = fig.add_axes([rect[0] + rect[2] * left_frac, rect[1],
                               rect[2] * mid_frac, rect[3]])
@@ -198,18 +198,17 @@ def draw_forest_panel(fig, rect, rows, panel_title, subtitle):
 rows_before = build_plot_rows(before_rows)
 rows_after = build_plot_rows(after_rows)
 
-fig_w = 10.0
-fig_h = 0.50 * len(rows_before) + 2.2
+fig_w = 15.0
+fig_h = 0.50 * len(rows_after) + 2.0
 fig = plt.figure(figsize=(fig_w, fig_h))
-panel_gap = 0.03
+panel_gap = 0.04
 panel_w = (1.0 - panel_gap) / 2.0
-bot, top_h = 0.14, 0.68
+bot, top_h = 0.15, 0.70
 
 draw_forest_panel(fig, [0.0, bot, panel_w, top_h], rows_before,
-                  "A  Before weighting", "Unadjusted Cox regression")
+                  "Before weighting", "Unadjusted Cox regression")
 draw_forest_panel(fig, [panel_w + panel_gap, bot, panel_w, top_h], rows_after,
-                  "B  After overlap weighting",
-                  f"Pairwise ATO; max|SMD| {smd_min:.2f}–{smd_max:.2f} (robust Cox)")
+                  "After overlap weighting", "Pairwise overlap weighting (ATO)")
 
 leg_handles = [
     mlines.Line2D([], [], color=COL_NS, marker="D", markersize=6, markerfacecolor=COL_NS,

@@ -40,17 +40,17 @@ GROUP_COLORS = {
     'HAIC_then_T':           '#CC79A7',
     'HAIC+I+T_concurrent':   '#D55E00',
     'HAIC_then_I+T':         '#56B4E9',
-    'Systemic_I+T':          '#009E73',
+    'Systemic_I+T':          '#117733',
 }
 GROUP_LABELS = {
     'HAIC_alone':            'HAIC alone',
     'HAIC+I_concurrent':     'HAIC + Immuno (concurrent)',
     'HAIC_then_I':           'HAIC → Immuno',
-    'HAIC+T_concurrent':     'HAIC + Target (concurrent)',
-    'HAIC_then_T':           'HAIC → Target',
-    'HAIC+I+T_concurrent':   'HAIC + Immuno + Target',
-    'HAIC_then_I+T':         'HAIC → Immuno + Target',
-    'Systemic_I+T':          'Systemic I+T',
+    'HAIC+T_concurrent':     'HAIC + Antiangiogenic (concurrent)',
+    'HAIC_then_T':           'HAIC → Antiangiogenic',
+    'HAIC+I+T_concurrent':   'HAIC + Immuno + Antiangiogenic',
+    'HAIC_then_I+T':         'HAIC → Immuno + Antiangiogenic',
+    'Systemic_I+T':          'Systemic Immuno + Antiangiogenic',
 }
 GROUP_ORDER = [
     'HAIC_alone', 'HAIC+I_concurrent', 'HAIC_then_I', 'HAIC+T_concurrent',
