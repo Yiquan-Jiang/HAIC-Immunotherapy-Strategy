@@ -28,11 +28,11 @@ GROUP_ORDER <- c(
 GROUP_PRETTY <- c(
   "HAIC_alone"           = "HAIC alone",
   "HAIC+I_concurrent"    = "HAIC + I (concurrent)",
-  "HAIC_then_I"          = "HAIC then I (sequential)",
+  "HAIC_then_I"          = "HAIC then I (deferred)",
   "HAIC+T_concurrent"    = "HAIC + T (concurrent)",
-  "HAIC_then_T"          = "HAIC then T (sequential)",
+  "HAIC_then_T"          = "HAIC then T (deferred)",
   "HAIC+I+T_concurrent"  = "HAIC + I + T (concurrent)",
-  "HAIC_then_I+T"        = "HAIC then I+T (sequential)"
+  "HAIC_then_I+T"        = "HAIC then I+T (deferred)"
 )
 
 # ── 8 treatment types — NPG palette ─────────────────────────────
@@ -99,7 +99,7 @@ build_legend_right <- function() {
   sz_tx <- 3.2
   sz_hdr <- 3.5
   tx_y <- y_top - seq_len(length(TX_LEVELS)) * y_step
-  tx_labels <- c("HAIC", "Immunotherapy", "Targeted therapy",
+  tx_labels <- c("HAIC", "Immunotherapy", "Antiangiogenic therapy",
                  "TACE", "HAIC + TACE", "Resection", "Ablation", "Transplant")
 
   p <- ggplot() + xlim(0, 1) + ylim(0.15, 1)

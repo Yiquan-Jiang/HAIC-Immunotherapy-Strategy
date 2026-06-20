@@ -1059,11 +1059,11 @@ fig.legend(handles=f4_legend, fontsize=LM_FS_P, loc='center',
            bbox_to_anchor=(0.5, _legend_y_fig),
            handlelength=1.2, handletextpad=0.4, columnspacing=2.0)
 
-fig.suptitle('HAIC then immunotherapy + targeted therapy vs HAIC alone — subgroup analysis (PSM-matched)',
+fig.suptitle('HAIC then immunotherapy + antiangiogenic therapy vs HAIC alone — subgroup analysis (PSM-matched)',
              fontsize=13, fontweight='bold', y=(1 - 0.30 / _f4_fig_h))
 
 _f4_foot = (
-    'I+T = HAIC then sequential immunotherapy + targeted therapy; H = HAIC alone. '
+    'I+T = HAIC then deferred immunotherapy + antiangiogenic therapy; H = HAIC alone. '
     'HR from unweighted Cox model (robust SE); ΔRMST from unweighted Kaplan–Meier (τ = 18 months); '
     'P-interaction from stratifier × treatment LRT (exploratory; no multiplicity adjustment). '
     'Continuous covariates dichotomized at fixed clinical cutoffs (see Methods).'

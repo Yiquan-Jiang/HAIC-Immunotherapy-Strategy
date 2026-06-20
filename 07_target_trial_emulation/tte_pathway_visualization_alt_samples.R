@@ -610,7 +610,7 @@ res_b1 <- tryCatch(run_group7_one(
 res_b2 <- tryCatch(run_group7_one(
   group_name      = "HAIC_then_I+T",
   regimen_target  = "I+T",
-  title_text      = "HAIC then Immunotherapy + Targeted",
+  title_text      = "HAIC then Immunotherapy + Antiangiogenic",
   out_subdir      = "group7_haic_then_IT"),
   error = function(e) {
     cat(sprintf("\n[ERROR] mode-B HAIC_then_I+T: %s\n", conditionMessage(e)))

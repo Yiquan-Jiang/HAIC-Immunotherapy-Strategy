@@ -1147,7 +1147,7 @@ fig.legend(handles=f4_legend, fontsize=LM_FS_P, loc='center',
            bbox_to_anchor=(0.5, _legend_y_fig),
            handlelength=1.2, handletextpad=0.4, columnspacing=2.0)
 
-fig.suptitle('HAIC + concurrent immunotherapy + targeted therapy vs HAIC alone — subgroup analysis (IPTW-weighted)',
+fig.suptitle('HAIC + concurrent immunotherapy + antiangiogenic therapy vs HAIC alone — subgroup analysis (IPTW-weighted)',
              fontsize=13, fontweight='bold', y=(1 - 0.30 / _f4_fig_h))
 
 _f4_foot = (

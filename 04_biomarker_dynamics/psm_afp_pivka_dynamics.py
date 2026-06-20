@@ -99,11 +99,11 @@ COLOR_G2 = '#E64B35'
 GROUP_PRETTY = {
     'HAIC_alone':          'HAIC alone',
     'HAIC+I_concurrent':   'HAIC+I (conc.)',
-    'HAIC_then_I':         'HAIC\u2192I (seq.)',
+    'HAIC_then_I':         'HAIC\u2192I (deferred)',
     'HAIC+T_concurrent':   'HAIC+T (conc.)',
-    'HAIC_then_T':         'HAIC\u2192T (seq.)',
+    'HAIC_then_T':         'HAIC\u2192T (deferred)',
     'HAIC+I+T_concurrent': 'HAIC+I+T (conc.)',
-    'HAIC_then_I+T':       'HAIC\u2192I+T (seq.)',
+    'HAIC_then_I+T':       'HAIC\u2192I+T (deferred)',
 }
 
 STATS_BOX = dict(boxstyle='round,pad=0.3', facecolor='white',

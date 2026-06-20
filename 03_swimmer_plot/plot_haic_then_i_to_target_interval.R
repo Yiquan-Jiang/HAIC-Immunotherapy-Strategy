@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# HAIC then I — interval from immunotherapy to first targeted therapy
+# HAIC then I — interval from immunotherapy to first antiangiogenic therapy
 #
 # Reconstructed from Claude Code session 7e3ed3cb-... (foamy-munching-riddle),
 # final iteration 2026-04-10 07:07 UTC. Original code was an inline heredoc
@@ -93,14 +93,14 @@ p_hist <- ggplot(merged, aes(x = interval_days)) +
            color = "#E64B35", size = 3.5, fontface = "bold") +
   annotate("label",
            x = Inf, y = Inf, vjust = 1.3, hjust = 1.02,
-           label = "Rule: Targeted therapy was permitted\n>= 1 month after immunotherapy initiation",
+           label = "Rule: Antiangiogenic therapy was permitted\n>= 1 month after immunotherapy initiation",
            size = 3.0, fontface = "italic", color = "#3C5488",
            fill = "#F0F4FA",
            label.size = 0.4, label.r = unit(0.2, "lines")) +
   scale_x_continuous(limits = c(0, 420),
                      breaks = seq(0, 420, 60),
                      oob = scales::squish) +
-  labs(x = "Days from immunotherapy to targeted therapy",
+  labs(x = "Days from immunotherapy to antiangiogenic therapy",
        y = "Number of patients") +
   theme_classic(base_size = 11) +
   theme(plot.margin = margin(5, 8, 5, 5))
@@ -149,9 +149,9 @@ p_right  <- p_pie1 / p_pie2
 combined <- (p_hist | p_right) +
   plot_layout(widths = c(1.3, 1)) +
   plot_annotation(
-    title    = "HAIC then I: Targeted Therapy After Immunotherapy",
+    title    = "HAIC then I: Antiangiogenic Therapy After Immunotherapy",
     subtitle = sprintf(
-      "%d of %d patients (%.1f%%) added targeted therapy; median interval %.1f months (IQR %.1f-%.1f)",
+      "%d of %d patients (%.1f%%) added antiangiogenic therapy; median interval %.1f months (IQR %.1f-%.1f)",
       n_target, n_total, n_target / n_total * 100,
       median(merged$interval_months),
       quantile(merged$interval_months, 0.25),

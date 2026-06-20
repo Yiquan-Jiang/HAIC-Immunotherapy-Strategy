@@ -74,11 +74,11 @@ GROUP_ORDER = [
 GROUP_LABELS = {
     "HAIC_alone":            "HAIC alone",
     "HAIC+I_concurrent":     "HAIC + Immunotherapy (conc.)",
-    "HAIC_then_I":           "HAIC → Immunotherapy (seq.)",
-    "HAIC+T_concurrent":     "HAIC + Targeted therapy (conc.)",
-    "HAIC_then_T":           "HAIC → Targeted therapy (seq.)",
+    "HAIC_then_I":           "HAIC → Immunotherapy (deferred)",
+    "HAIC+T_concurrent":     "HAIC + Antiangiogenic therapy (conc.)",
+    "HAIC_then_T":           "HAIC → Antiangiogenic therapy (deferred)",
     "HAIC+I+T_concurrent":   "HAIC + I + T (concurrent)",
-    "HAIC_then_I+T":         "HAIC → I + T (sequential)",
+    "HAIC_then_I+T":         "HAIC → I + T (deferred)",
     "Systemic_I+T":          "Systemic I+T",
 }
 

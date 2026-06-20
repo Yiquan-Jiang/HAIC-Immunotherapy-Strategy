@@ -190,7 +190,7 @@ ABBREV_FOOTNOTE <- paste(
   "IVC/RA, inferior vena cava/right atrium; NLR, neutrophil-to-lymphocyte ratio;",
   "PLR, platelet-to-lymphocyte ratio; PSM, propensity score matching;",
   "HAIC, hepatic arterial infusion chemotherapy;",
-  "I, immunotherapy; T, targeted therapy.",
+  "I, immunotherapy; T, antiangiogenic therapy.",
   "Continuous variables are presented as median (IQR); categorical variables as n (%).",
   sep = " "
 )
@@ -329,11 +329,11 @@ cat("\n2. 生成全队列描述性总表（Table S0）...\n")
 GROUP_LABELS <- c(
   "HAIC_alone"          = "HAIC alone",
   "HAIC+I_concurrent"   = "HAIC + Immunotherapy (concurrent)",
-  "HAIC_then_I"         = "HAIC then Immunotherapy (sequential)",
-  "HAIC+T_concurrent"   = "HAIC + Targeted therapy (concurrent)",
-  "HAIC_then_T"         = "HAIC then Targeted therapy (sequential)",
-  "HAIC+I+T_concurrent" = "HAIC + Immunotherapy + Targeted therapy (concurrent)",
-  "HAIC_then_I+T"       = "HAIC then Immunotherapy + Targeted therapy (sequential)",
+  "HAIC_then_I"         = "HAIC then Immunotherapy (deferred)",
+  "HAIC+T_concurrent"   = "HAIC + Antiangiogenic therapy (concurrent)",
+  "HAIC_then_T"         = "HAIC then Antiangiogenic therapy (deferred)",
+  "HAIC+I+T_concurrent" = "HAIC + Immunotherapy + Antiangiogenic therapy (concurrent)",
+  "HAIC_then_I+T"       = "HAIC then Immunotherapy + Antiangiogenic therapy (deferred)",
   "Systemic_I+T"        = "Systemic I+T"
 )
 

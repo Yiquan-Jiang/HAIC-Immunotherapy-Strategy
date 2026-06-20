@@ -81,7 +81,7 @@ COHORT_META <- list(
   ),
   cohort_3matched = list(
     title = "HAIC then I+T On-Demand",
-    rule_ab = "I+T (immune + targeted therapy)",
+    rule_ab = "I+T (immune + antiangiogenic therapy)",
     early_abbr = "I+T",
     rule_text = paste0(
       "<b>Trigger Rules</b> (evaluated at each pre-HAIC visit, cycle \u2265 3)<br>",
