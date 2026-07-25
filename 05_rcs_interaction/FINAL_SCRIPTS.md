@@ -37,6 +37,16 @@ Rscript afp_pivka_composite/02_rcs_matrix_panel.R ALL
 
 环境变量（可选）：`RMS_RCS_NK`（默认 3），`RMS_RCS_N_BOOT`（默认 200）
 
+## 补充图：pre-IT 采血时间点
+
+- `afp_pivka_composite/00b_plot_pre_it_timing.py` — pre-IT 采血时间点相对免疫治疗开始与
+  最近一次 HAIC 的间隔分布（两面板，600 dpi PNG + PDF/SVG/TIFF 矢量），用于补充材料说明
+  交互分析所采用血液数据的时点。依赖 `00a_extract_pre_it_labs.py` 写回的 `pre_it_lab_date`。
+
+```bash
+python afp_pivka_composite/00b_plot_pre_it_timing.py
+```
+
 ## 非最终版本（请勿用于正式结果）
 
 - `rcs_all_pairs_dual_timescale.R` — 早期 all-pairs 版本，已被路线 A/B 拆分取代

@@ -28,6 +28,7 @@ systemic therapy to HAIC.
 ├── afp_pivka_composite/
 │   ├── 00_build_composite_cohorts.py  ← Prerequisite for Route B
 │   ├── 00a_extract_pre_it_labs.py     ── Pre-IT lab extraction helper
+│   ├── 00b_plot_pre_it_timing.py      ── Pre-IT sampling-timing figure (supplement)
 │   ├── 01_rcs_afp_pivka_composite.R   ── Route B: single-indicator
 │   └── 02_rcs_matrix_panel.R          ── Route B: 8×5 matrix
 └── publication_figures/               ← 5×6 publication panels
